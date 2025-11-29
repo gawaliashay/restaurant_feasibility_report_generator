@@ -1,0 +1,27 @@
+langchain
+langchain_community
+langchain-openai
+langchain-groq
+langchain-anthropic
+langchain_huggingface
+langgraph
+langgraph-checkpoint-sqlite
+
+pydantic
+python-dotenv
+structlog
+pytrends
+requests
+
+langchain-tavily
+google-search-results
+
+
+# api
+fastapi
+uvicorn
+python-multipart
+pydantic
+python-dotenv
+aiofiles
+uvicorn

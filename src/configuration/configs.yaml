@@ -1,0 +1,179 @@
+## src\configuration\configs.yaml
+
+# =====================================
+# PATHS & DIRECTORIES
+# =====================================
+paths:
+  data: ${DATA_PATH:-data/analysis}
+  vector_store: ${VECTOR_STORE_PATH:-vectorstore/}
+  reports: ${REPORTS_DIRECTORY:-reports}
+
+# =====================================
+# APPLICATION CONFIGURATION
+# =====================================
+app:
+  name: ${PROJECT_NAME:-restaurant_research}
+  env: ${ENV:-development}
+  host: ${HOST:-127.0.0.1}
+  port: ${PORT:-8000}
+  cors_origins: ${ALLOWED_ORIGINS:-*}
+
+# =====================================
+# LLM CONFIGURATION
+# =====================================
+llm:
+  main_provider: "groq"
+  # main_model: "openai/gpt-oss-safeguard-20b"
+  #main_model: "moonshotai/kimi-k2-instruct-0905"
+  #main_model: "meta-llama/llama-4-maverick-17b-128e-instruct"
+  main_model: "llama-3.3-70b-versatile"
+  fast_provider: "groq"
+  fast_model: "llama-3.1-8b-instant"
+  temperature: 1
+  fast_temperature: 0.7
+
+# =====================================
+# RESEARCH CONFIGURATION
+# =====================================
+research:
+  max_analysts: 5
+  max_retries: 2
+  tavily_max_results: 10
+  enable_sequential_fallback: true
+
+# =====================================
+# API CONFIGURATION
+# =====================================
+apis:
+  openstreetmap:
+    base_url: "https://nominatim.openstreetmap.org/search"
+    user_agent: "ResearchApp/1.0"
+    timeout: 10
+    country_codes: "in"
+  tavily:
+    api_key: ${TAVILY_API_KEY}
+  serpapi:
+    api_key: ${SERPAPI_API_KEY}
+
+# =====================================
+# EXPORT CONFIGURATION
+# =====================================
+export:
+  formats: ["md", "json"]
+  timestamp_format: "%Y%m%d_%H%M%S"
+
+# =====================================
+# ANALYSIS CONFIGURATION
+# =====================================
+analysis:
+  max_key_insights: 5
+  max_compressed_items: 10
+  enable_data_compression: true
+  required_roles: ["market research", "financial Analyst", "location intelligence", "competition analysis", "consumer insights"]
+  keywords:
+    market_insights: ["demand", "trend", "growth", "opportunity", "popular", "preference"]
+    competitor_data: ["competitor", "competition", "rival", "competing", "market share"]
+    financial_data: ["revenue", "profit", "investment", "roi", "margin", "cost", "price", "budget"]
+    risk_factors: ["risk", "challenge", "threat", "issue", "problem", "concern"]
+    demographics: ["demographic", "age", "income", "professional", "customer", "target", "audience"]
+
+# =====================================
+# BUSINESS CASE CONFIGURATION
+# =====================================
+business_case:
+  default:
+    restaurant_concept: "Setup momo speciality Restaurant"
+    target_location: "Warje, Pune, Maharashtra - 411058"
+    investment: "₹350,000"
+    target_demographic: "Professionals 25-45, health-conscious"
+    special_note: "momo demand, spending power, competition density"
+
+# =====================================
+# TOOL CONFIGURATION
+# =====================================
+tools:
+  tavily_search:
+    name: "Tavily Search"
+    description: "Web search for market research"
+    function: "use_tavily_search"
+    required_params: ["search_query"]
+    
+  google_trends:
+    name: "Google Trends" 
+    description: "Trend analysis and popularity data"
+    function: "use_google_trends"
+    required_params: ["trend_query"]
+    
+  openstreetmap:
+    name: "OpenStreetMap"
+    description: "Location data and coordinates"
+    function: "use_openstreetmap" 
+    required_params: ["location"]
+    
+  google_maps:
+    name: "Google Maps"
+    description: "Nearby places and businesses"
+    function: "use_google_maps"
+    required_params: ["location"]
+
+# =====================================
+# MODELS
+# =====================================
+models:
+  llms:
+    groq:
+      model: "llama-3.1-8b-instant"
+      import_path: langchain_groq.ChatGroq
+      api_key: ${GROQ_API_KEY}
+      temperature: 0.3
+      max_tokens: 512
+
+    mistral:
+      model: "mistral-small"  # Changed from model_name to model for consistency
+      import_path: langchain_mistralai.ChatMistralAI
+      api_key: ${MISTRAL_API_KEY}
+      temperature: 0.6
+      max_tokens: 512
+
+    openai:
+      model: "gpt-4o-mini"
+      import_path: langchain_openai.ChatOpenAI
+      api_key: ${OPENAI_API_KEY}
+      temperature: 0.7
+      max_tokens: 512
+
+    google:
+      model: "gemini-1.5-flash"
+      import_path: langchain_google_genai.ChatGoogleGenerativeAI
+      api_key: ${GOOGLE_API_KEY}
+      temperature: 0.3
+      max_tokens: 512
+
+# =====================================
+# REPORT CONFIGURATION
+# =====================================
+reporting:
+  save_to_file: true
+  reports_directory: "reports"
+  create_backup: true
+  save_formats: ["md", "json"]
+
+# =====================================
+# MONITORING & LOGGING
+# =====================================
+monitoring:
+  langsmith:
+    api_key: ${LANGCHAIN_API_KEY}
+    project: ${PROJECT_NAME:-restaurant_research}
+    tracing: ${ENABLE_LANGCHAIN_TRACING:-false}
+
+# =====================================
+# STORAGE
+# =====================================
+storage:
+  pinecone:
+    api_key: ${PINECONE_API_KEY}
+    collection_name: "restaurant_research_data"
+  aws:
+    region: ${AWS_REGION:-ap-south-1}
+    s3_bucket: ${S3_BUCKET}
