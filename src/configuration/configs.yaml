@@ -1,4 +1,4 @@
-## src\configuration\configs.yaml
+# src\configuration\configs.yaml
 
 # =====================================
 # PATHS & DIRECTORIES
@@ -19,37 +19,9 @@ app:
   cors_origins: ${ALLOWED_ORIGINS:-*}
 
 # =====================================
-# LLM CONFIGURATION
-# =====================================
-llm:
-  main_provider: "groq"
-  # main_model: "openai/gpt-oss-safeguard-20b"
-  #main_model: "moonshotai/kimi-k2-instruct-0905"
-  #main_model: "meta-llama/llama-4-maverick-17b-128e-instruct"
-  main_model: "llama-3.3-70b-versatile"
-  fast_provider: "groq"
-  fast_model: "llama-3.1-8b-instant"
-  temperature: 1
-  fast_temperature: 0.7
-
-# =====================================
-# RESEARCH CONFIGURATION
-# =====================================
-research:
-  max_analysts: 5
-  max_retries: 2
-  tavily_max_results: 10
-  enable_sequential_fallback: true
-
-# =====================================
 # API CONFIGURATION
 # =====================================
 apis:
-  openstreetmap:
-    base_url: "https://nominatim.openstreetmap.org/search"
-    user_agent: "ResearchApp/1.0"
-    timeout: 10
-    country_codes: "in"
   tavily:
     api_key: ${TAVILY_API_KEY}
   serpapi:
@@ -83,10 +55,24 @@ analysis:
 business_case:
   default:
     restaurant_concept: "Setup momo speciality Restaurant"
-    target_location: "Warje, Pune, Maharashtra - 411058"
+    location:
+      society: "Sneha Paradise"  # Optional: Specific complex/building
+      local_area: "Warje"
+      city: "Pune"
+      state: "Maharashtra"
+      pincode: "411058"
     investment: "₹350,000"
     target_demographic: "Professionals 25-45, health-conscious"
-    special_note: "momo demand, spending power, competition density"
+    special_note: "located on road which has dead end ahead. 90% dependent on college students."
+
+# =====================================
+# RESEARCH CONFIGURATION
+# =====================================
+research:
+  max_analysts: 1
+  max_retries: 2
+  tavily_max_results: 10
+  enable_sequential_fallback: true
 
 # =====================================
 # TOOL CONFIGURATION
@@ -94,56 +80,71 @@ business_case:
 tools:
   tavily_search:
     name: "Tavily Search"
-    description: "Web search for market research"
+    description: "Web search for local area demographics and market trends"
     function: "use_tavily_search"
-    required_params: ["search_query"]
+    parameters:
+      search_query:
+        template: "{local_area} {city} area demographics spending power restaurant demand {restaurant_concept} competition"
+        required: true
     
   google_trends:
     name: "Google Trends" 
-    description: "Trend analysis and popularity data"
+    description: "Trend analysis for restaurant concept popularity"
     function: "use_google_trends"
-    required_params: ["trend_query"]
-    
-  openstreetmap:
-    name: "OpenStreetMap"
-    description: "Location data and coordinates"
-    function: "use_openstreetmap" 
-    required_params: ["location"]
+    parameters:
+      trend_query:
+        template: "{restaurant_concept} {local_area} {city}"
+        required: true
     
   google_maps:
     name: "Google Maps"
-    description: "Nearby places and businesses"
+    description: "City-level competition analysis and business density"
     function: "use_google_maps"
-    required_params: ["location"]
+    parameters:
+      location:
+        template: "{local_area}, {city}, {state}, India"
+        required: true
+      query:
+        template: " restaurant {city}" 
+        required: true
 
 # =====================================
-# MODELS
+# DEFAULTS - UPDATED FOR OPTIMAL PERFORMANCE
+# =====================================
+defaults:
+  primary_llm: groq             
+  team_creator_llm: mistral     
+  research_llm: openai
+  report_compiler_llm: groq
+
+# =====================================
+# MODELS TO SELECT
 # =====================================
 models:
   llms:
     groq:
-      model: "llama-3.1-8b-instant"
+      model: llama-3.1-8b-instant  # Change from model_name to model
       import_path: langchain_groq.ChatGroq
       api_key: ${GROQ_API_KEY}
       temperature: 0.3
-      max_tokens: 512
+      max_tokens: 2000
 
     mistral:
-      model: "mistral-small"  # Changed from model_name to model for consistency
+      model: mistral-small  # Change from model_name to model
       import_path: langchain_mistralai.ChatMistralAI
       api_key: ${MISTRAL_API_KEY}
       temperature: 0.6
       max_tokens: 512
 
     openai:
-      model: "gpt-4o-mini"
+      model: gpt-4o-mini
       import_path: langchain_openai.ChatOpenAI
       api_key: ${OPENAI_API_KEY}
       temperature: 0.7
       max_tokens: 512
 
     google:
-      model: "gemini-1.5-flash"
+      model: gemini-1.5-flash
       import_path: langchain_google_genai.ChatGoogleGenerativeAI
       api_key: ${GOOGLE_API_KEY}
       temperature: 0.3

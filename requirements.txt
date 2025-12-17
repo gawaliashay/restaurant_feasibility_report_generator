@@ -4,6 +4,8 @@ langchain-openai
 langchain-groq
 langchain-anthropic
 langchain_huggingface
+langchain-mistralai
+langchain-google-genai
 langgraph
 langgraph-checkpoint-sqlite
 

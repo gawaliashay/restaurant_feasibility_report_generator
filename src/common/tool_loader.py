@@ -90,112 +90,61 @@ def use_google_trends(state: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------
-# OpenStreetMap — Nominatim
-# ---------------------------------------------------------------------
-def use_openstreetmap(state: Dict[str, Any]) -> Dict[str, Any]:
-    location = state.get("location", "")
-    if not location.strip():
-        return {"error": "missing location"}
-
-    osm_cfg = config['apis']['openstreetmap']
-
-    try:
-        response = requests.get(
-            osm_cfg['base_url'],
-            params={
-                "q": location,
-                "format": "json",
-                "limit": 1,
-                "countrycodes": osm_cfg.get("country_codes")
-            },
-            headers={"User-Agent": osm_cfg.get("user_agent")},
-            timeout=osm_cfg.get("timeout", 20),
-        )
-        response.raise_for_status()
-
-        data = response.json()
-        if not data:
-            return {"error": "location not found"}
-
-        place = data[0]
-        return {
-            "tool": "openstreetmap",
-            "location": location,
-            "latitude": place.get("lat"),
-            "longitude": place.get("lon"),
-            "display_name": place.get("display_name"),
-            "address": place.get("address", {}),
-            "sources_count": 1,
-        }
-    except Exception as e:
-        logger.exception("OpenStreetMap lookup failed.")
-        return {"error": f"openstreetmap failed: {e}"}
-
-
-# ---------------------------------------------------------------------
 # Google Maps (via SerpAPI — competitors lookup)
 # ---------------------------------------------------------------------
 def use_google_maps(state: Dict) -> Dict:
-    """Better Google Maps for Indian locations"""
-    location = state.get("location", "")
-    
-    if not location:
-        return {"error": "No location provided"}
-    
+    """Google Maps for restaurant competition analysis"""
     try:
-        # Better parameters for Indian locations
+        # Get config
+        config = config_loader.get()
+        tool_config = config['tools']['google_maps']
+        business_config = config['business_case']['default']
+        
+        # Get location from state or config
+        location_data = state.get("location", {})
+        if isinstance(location_data, dict):
+            city = location_data.get("city", business_config['location']['city'])
+            state_name = location_data.get("state", business_config['location']['state'])
+        else:
+            city = business_config['location']['city']
+            state_name = business_config['location']['state']
+        
+        location = f"{city}, {state_name}, India"
+        
+        # Build query from config template
+        query_template = tool_config['parameters']['query']['template']
+        query_context = {
+            "restaurant_concept": state.get("restaurant_concept", business_config['restaurant_concept']),
+            "city": city
+        }
+        query = query_template.format(**query_context)
+        
         params = {
             "engine": "google_local",
-            "q": "restaurants",
-            "location": "Pune, Maharashtra, India",  # Use broader location
-            "hl": "en",
-            "gl": "in",  # India country code
+            "q": query,
+            "location": location,
+            "hl": "en", 
+            "gl": "in",
             "api_key": SERPAPI_API_KEY
         }
         
-        print(f"🔍 Searching Google Maps for restaurants in Pune...")
+        logger.info(f"Searching Google Maps for {query} in {location}...")
         response = requests.get("https://serpapi.com/search", params=params, timeout=20)
+        response.raise_for_status()
         
-        if response.status_code == 200:
-            results = response.json()
-            local_results = results.get("local_results", [])
-            
-            # If no local results, try to get organic results
-            if not local_results:
-                organic_results = results.get("organic_results", [])
-                local_results = [{"title": r.get("title", "Restaurant"), "type": "competitor"} 
-                               for r in organic_results[:3] if "restaurant" in r.get("title", "").lower()]
-            
-            # Always provide some fallback data
-            if not local_results:
-                local_results = [
-                    {"title": "Local Pune Restaurant", "type": "competitor", "fallback": True},
-                    {"title": "Food Court", "type": "competitor", "fallback": True},
-                    {"title": "Street Food Vendor", "type": "competitor", "fallback": True}
-                ]
-            
-            return {
-                "tool": "google_maps",
-                "results": local_results,
-                "results_count": len(local_results),
-                "status": "success" if local_results and not local_results[0].get("fallback") else "fallback"
-            }
-        else:
-            return {"error": f"API error: {response.status_code}"}
+        results = response.json()
+        local_results = results.get("local_results", [])
+        
+        return {
+            "tool": "google_maps",
+            "results": local_results,
+            "results_count": len(local_results),
+            "status": "success"
+        }
             
     except Exception as e:
-        # Provide meaningful competition data
-        return {
-            "tool": "google_maps", 
-            "results": [
-                {"title": "Local Restaurant - Warje", "type": "competitor", "details": "General restaurant competition"},
-                {"title": "Food Street Outlet", "type": "competitor", "details": "Quick service restaurant"},
-                {"title": "Momo Stall", "type": "direct_competitor", "details": "Potential momo competition"}
-            ],
-            "results_count": 3,
-            "status": "fallback",
-            "note": "Using enhanced fallback competition data for market analysis"
-        }
+        logger.exception("Google Maps request failed.")
+        return {"error": f"Google Maps failed: {str(e)}"}
 
 # ---------------------------------------------------------------------
 # SerpAPI Key Check
@@ -213,6 +162,5 @@ def check_serpapi_key() -> bool:
 tool_loader = {
     "tavily_search": use_tavily_search,
     "google_trends": use_google_trends,
-    "openstreetmap": use_openstreetmap,
     "google_maps": use_google_maps,
 }

@@ -1,5 +1,5 @@
-# src\configuration\config_loader.py
- 
+# src/configuration/config_loader.py
+
 import os
 import yaml
 import re
@@ -11,9 +11,6 @@ from src.logging_exception.logging.logger import logger
 from src.logging_exception.exception.custom_exception import CustomException
 
 
-# ---------------------------------------------------------
-# Pydantic schema for Restaurant Research
-# ---------------------------------------------------------
 class PathsConfig(BaseModel):
     data: str
     vector_store: str
@@ -26,27 +23,18 @@ class AppConfig(BaseModel):
     port: int
     cors_origins: str
 
-class LLMConfig(BaseModel):
-    main_provider: str
-    fast_provider: str
-    main_model: str
-    fast_model: str
-    temperature: float
-    fast_temperature: float
+class DefaultsConfig(BaseModel):
+    primary_llm: str        
+    team_creator_llm: str     
+    research_llm: str
+    report_compiler_llm: str
 
 class ResearchConfig(BaseModel):
     max_analysts: int
     max_retries: int
     tavily_max_results: int
 
-class OpenStreetMapConfig(BaseModel):
-    base_url: str
-    user_agent: str
-    timeout: int
-    country_codes: str
-
 class APIConfig(BaseModel):
-    openstreetmap: OpenStreetMapConfig
     tavily: Dict[str, str]
     serpapi: Dict[str, str]
 
@@ -64,21 +52,23 @@ class AnalysisConfig(BaseModel):
 class BusinessCaseConfig(BaseModel):
     default: Dict[str, Any]
 
+class ToolParameterConfig(BaseModel):
+    template: str
+    required: bool = True
+
 class ToolConfig(BaseModel):
     name: str
     description: str
     function: str
-    required_params: list
+    parameters: Dict[str, ToolParameterConfig]
 
 class ToolsConfig(BaseModel):
     tavily_search: ToolConfig
     google_trends: ToolConfig
-    openstreetmap: ToolConfig
     google_maps: ToolConfig
 
 class ModelConfig(BaseModel):
-    model_name: Optional[str] = None
-    model: Optional[str] = None
+    model: str  # CHANGED: from model_name to model for consistency
     import_path: str
     api_key: str
     temperature: float
@@ -100,52 +90,28 @@ class ReportingConfig(BaseModel):
     save_formats: list
 
 class MonitoringConfig(BaseModel):
-    langsmith: Dict[str, Any]  # Changed from Dict[str, str] to Dict[str, Any]
+    langsmith: Dict[str, Any]
 
 class StorageConfig(BaseModel):
     pinecone: Dict[str, str]
     aws: Dict[str, str]
 
 class ConfigSchema(BaseModel):
-    # New sections
     paths: PathsConfig
     app: AppConfig
-    
-    # LLM Configuration
-    llm: LLMConfig
-    
-    # Research Configuration
+    defaults: DefaultsConfig
     research: ResearchConfig
-    
-    # API Configuration
     apis: APIConfig
-    
-    # Export Configuration
     export: ExportConfig
-    
-    # Analysis Configuration
     analysis: AnalysisConfig
-    
-    # Business Case Configuration
     business_case: BusinessCaseConfig
-    
-    # Tool Configuration
     tools: ToolsConfig
-    
-    # Models Configuration
     models: ModelsConfig
-    
-    # Report Configuration
     reporting: ReportingConfig
-    
-    # New sections
     monitoring: MonitoringConfig
     storage: StorageConfig
 
 
-# ---------------------------------------------------------
-# Config Loader
-# ---------------------------------------------------------
 class ConfigLoader:
     """Central configuration manager for Restaurant Research System."""
 
@@ -174,16 +140,14 @@ class ConfigLoader:
         return base
 
     def _resolve_env_vars(self, data: Any) -> Any:
-        """Resolve environment variables in configuration strings including ${VAR:-default} syntax."""
+        """Resolve environment variables in configuration strings."""
         if isinstance(data, dict):
             return {k: self._resolve_env_vars(v) for k, v in data.items()}
         if isinstance(data, list):
             return [self._resolve_env_vars(v) for v in data]
         if isinstance(data, str):
-            # Handle ${VAR:-default} format
             resolved_data = data
             for match in re.findall(r"\$\{([^}]+)\}", data):
-                # Parse the variable with default value
                 if ':-' in match:
                     var_name, default_value = match.split(':-', 1)
                 else:
@@ -197,7 +161,7 @@ class ConfigLoader:
                 else:
                     logger.warning(f"Environment variable {var_name} not found and no default provided")
             
-            # Handle simple ${VAR} format (without defaults)
+            # Handle simple ${VAR} format
             for match in re.findall(r"\$\{([^}:]+)\}", resolved_data):
                 env_value = os.getenv(match)
                 if env_value is not None:
@@ -205,7 +169,7 @@ class ConfigLoader:
                 else:
                     logger.warning(f"Environment variable {match} not found")
             
-            # Convert string numbers to actual numbers when appropriate
+            # Type conversion
             if resolved_data.isdigit():
                 return int(resolved_data)
             elif resolved_data.replace('.', '').isdigit() and resolved_data.count('.') == 1:
@@ -245,7 +209,5 @@ class ConfigLoader:
         return api_keys
 
 
-# ---------------------------------------------------------
 # Singleton Instance
-# ---------------------------------------------------------
 config_loader = ConfigLoader()

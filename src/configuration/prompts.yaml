@@ -1,378 +1,495 @@
-# src\configuration\prompts.yaml
-
 # =====================================
-# ANALYST GENERATION - ENHANCED
+# ANALYST GENERATION
 # =====================================
 analyst_generation:
   dynamic_analysts: |
-    Generate EXACTLY {max_analysts} specialized analysts for restaurant market research.
+    Generate exactly {max_analysts} analysts for comprehensive restaurant market research.
 
     BUSINESS CONTEXT:
     - Concept: {restaurant_concept}
-    - Location: {target_location} 
+    - Location: {local_area}, {city}, {state} {pincode}
     - Investment: {investment}
-    - Target: {target_demographic}
-    - Focus: {special_note}
+    - Target Market: {target_demographic}
+    - Special Focus: {special_note}
+    - Available Tools: {available_tools}
+    - Required Expertise Areas: {required_roles}
 
-    MANDATORY RULES:
-    - Generate exactly {max_analysts} analysts - no more, no less
-    - Each role must be unique and specific to restaurant market research
-    - Available tools: {available_tools}
-    - Assign 0-2 tools per analyst based on role relevance
-    - Financial Analysts must have EMPTY tools list []
-    - Tools must be complementary (no duplicate mapping tools)
-    - Focus on concrete data: real numbers, competitor names, specific costs
-    - Required roles: {required_roles}
+    ✅ DO:
+    - Cover ALL expertise areas from {required_roles}
+    - Create specific role names (e.g., "Local Cost Analyst" not "Market Analyst")
+    - Match tools directly to each analyst's specific research task
+    - Write descriptions that say EXACTLY what data they will find
+    - Use {max_analysts} analysts exactly
 
-    OUTPUT FORMAT - STRICT JSON ONLY:
-    Return a valid JSON array with exactly {max_analysts} analyst objects.
+    ❌ DON'T:
+    - Use vague role names like "Research Specialist" or "Market Analyst"
+    - Assign generic tools without clear purpose
+    - Write fluffy descriptions like "analyze market trends"
+    - Miss any required expertise areas
+    - Generate more or fewer than {max_analysts} analysts
 
-    Each analyst object must have these exact fields:
-    - role: string (specific role name)
-    - affiliation: string (reputable organization) 
-    - tools: array of strings (0-2 tool names)
-    - description: string (specific data collection responsibilities)
+    RESEARCH STRATEGY:
+    - Each analyst must have a unique specialization
+    - Assign tools based on analyst expertise (1-3 tools per analyst)
+    - Ensure comprehensive coverage of restaurant market research domains
+    - Tools should match analyst role and research focus
 
-    Example format (replace with your actual analysts):
+    OUTPUT REQUIREMENTS:
+    - Exactly {max_analysts} analysts in JSON array format
+    - Each analyst must have: role, affiliation, tools, description
+    - Descriptions should be specific and action-oriented
+    - Tools must be from available tools list only
+
+    OUTPUT FORMAT (STRICT JSON):
     [
       {{
-        "role": "Market Research Analyst",
-        "affiliation": "Euromonitor International",
-        "tools": ["tavily_search"],
-        "description": "Analyze market trends and consumer demand patterns"
+        "role": "Specialized role name",
+        "affiliation": "Research firm or expertise area",
+        "tools": ["tool1", "tool2"],
+        "description": "Specific research focus and methodology"
       }}
     ]
 
-    IMPORTANT: Return ONLY valid JSON, no other text or explanations.
-    
+
 # =====================================
-# RESEARCH - OPTIMIZED FOR COMPLETENESS
+# RESEARCH
 # =====================================
 research:
   single_analyst: |
-    You are {analyst_role}, a {affiliation} analyst specializing in {description}.
-    Analyze: {restaurant_concept} in {target_location}, Investment: {investment}, Target: {target_demographic}, Note: {special_note}
-    Provide concrete, data-driven recommendations.
+    You are {analyst_role} from {affiliation}, specializing in {description}.
+
+    RESEARCH CONTEXT:
+    - Restaurant Concept: {restaurant_concept}
+    - Location: {local_area}, {city}, {state} {pincode} ({full_city})
+    - Investment Scope: {investment}
+    - Target Demographic: {target_demographic}
+    - Special Considerations: {special_note}
+
+    ✅ DO:
+    - Find VERIFIABLE data (specific prices, counts, names, addresses)
+    - Answer: "What ONE fact would change the business decision?"
+    - Be specific (e.g., "Rent at 123 Main St: ₹50,000/month, 500 sq ft")
+    - Cite sources/methods (e.g., "Called 3 suppliers on Nov 15")
+    - Focus on your assigned {description} expertise
+
+    ❌ DON'T:
+    - Give general trends or obvious advice
+    - Use percentages without base numbers
+    - Say "market is growing" without local proof
+    - Repeat what other analysts would find
+    - Provide generic recommendations
+
+    RESEARCH FOCUS:
+    - Conduct specialized analysis based on your expertise
+    - Gather location-specific market intelligence
+    - Provide actionable insights for restaurant feasibility
+    - Focus on your assigned research domains
+
+    OUTPUT REQUIREMENTS:
+    - Factual, data-driven analysis
+    - Location-specific insights
+    - Professional business writing style
+    - No generic or theoretical content
+
 
   optimized_analysis: |
-    ANALYST: {analyst_role} from {affiliation}
-    SPECIALIZATION: {description}
-    
+    ANALYST PROFILE:
+    - Role: {analyst_role}
+    - Affiliation: {affiliation} 
+    - Specialization: {description}
+
     BUSINESS CONTEXT:
-    - Restaurant: {restaurant_concept}
-    - Location: {target_location}
+    - Concept: {restaurant_concept}
+    - Location: {local_area}, {city}, {state} {pincode}
     - Investment: {investment}
-    - Target Market: {target_demographic}
-    
-    RESEARCH DATA: {research_findings}
-    
-    CRITICAL INSTRUCTIONS:
-    - Write COMPLETE analysis - DO NOT cut off mid-sentence
-    - Use ACTUAL numbers from research, not placeholders
-    - If no specific data available, state "Data not available" and provide industry estimates
-    - NO markdown formatting (no **bold**, no headers)
-    - Complete ALL sentences and sections
-    
-    ANALYSIS SECTION:
-    Provide detailed professional analysis based on the research findings. Focus on specific, actionable insights. Include concrete numbers, market opportunities, and strategic recommendations.
+    - Target Demographic: {target_demographic}
 
-    KEY INSIGHTS:
-    - [First specific insight with supporting data]
-    - [Second specific insight with supporting data]
-    - [Third specific insight with supporting data]
+    RESEARCH DATA:
+    {research_findings}
 
-    IMPORTANT: Write complete, fully-formed analysis. Do not use asterisks or markdown. Ensure all sentences are complete.
+    STRUCTURED INSIGHTS:
+    {structured_data}
+
+    ✅ DO:
+    - Extract the 2-3 most important numbers
+    - Explain what each number MEANS for the business
+    - Warn if data is contradictory or unreliable
+    - Answer: "Based on this, should they do X or Y?"
+    - Connect findings to specific business decisions
+
+    ❌ DON'T:
+    - Summarize all data equally
+    - Hide uncertainties or data conflicts
+    - Use jargon without business translation
+    - Give recommendations without clear "why"
+    - Ignore location-specific factors
+
+    ANALYSIS TASK:
+    Synthesize the research findings into a comprehensive analytical report.
+
+    REQUIRED SECTIONS:
+    1. KEY FINDINGS - Most important research discoveries
+    2. MARKET ASSESSMENT - Location-specific opportunities and challenges
+    3. BUSINESS IMPLICATIONS - What this means for the restaurant concept
+    4. RECOMMENDATIONS - Actionable insights based on research
+
+    OUTPUT GUIDELINES:
+    - Maintain professional analytical tone
+    - Connect findings to specific business decisions
+    - Prioritize location-relevant insights
+    - Include both quantitative and qualitative assessment
+
 
 # =====================================
-# REPORT GENERATION - PROFESSIONAL STANDARDS
+# REPORT GENERATION
 # =====================================
 reporting:
   executive_summary: |
-    Create professional executive summary (300-400 words) for investment review.
+    Generate a comprehensive executive summary for restaurant feasibility.
 
-    CONTEXT:
+    RESEARCH CONTEXT:
+    - Concept: {restaurant_concept}
     - Investment: {investment}
-    - Target Market: {target_demographic}
-    - Research Insights: {research_summary}
+    - Target Demographic: {target_demographic}
+    - Location: {local_area}, {city}, {state} {pincode}
+    - Research Quality: {research_quality}
+    - Data Sources: {successful_tools}
+    - Analyst Consensus: {analyst_consensus}
 
-    PROFESSIONAL REQUIREMENTS:
-    - Formal business language and tone
-    - Evidence-based claims from research
-    - Strategic focus on investment implications
-    - Clear decision-making framework
+    RESEARCH INSIGHTS:
+    {key_research_insights}
 
-    STRUCTURED CONTENT:
-    1. BUSINESS OPPORTUNITY: Market gap and concept viability
-    2. COMPETITIVE POSITIONING: Unique advantages and market alignment  
-    3. FINANCIAL OUTLOOK: Key metrics and return potential
-    4. STRATEGIC PATH: Clear implementation roadmap
+    ✅ DO:
+    - Give 3 specific, data-driven reasons
+    - State the ONE biggest deal-breaker risk
+    - Name the ONE most critical first action
+    - Reference specific findings from {key_research_insights}
 
-    CRITICAL: Reference detailed analysis sections without data repetition.
+    ❌ DON'T:
+    - Bury the bottom line in executive fluff
+    - List all findings equally
+    - Make unsupported optimistic claims
+    - Ignore risks mentioned in {analyst_consensus}
+    - Use vague language like "synergistic opportunity"
+
+    STRUCTURE:
+    1. BUSINESS OPPORTUNITY - Market gap and potential in {local_area}
+    2. COMPETITIVE POSITIONING - How concept fits in local market
+    3. FINANCIAL VIABILITY - Investment outlook and projections
+    4. KEY SUCCESS FACTORS - Critical elements for success
+    5. STRATEGIC RECOMMENDATION - Go/no-go assessment with rationale
+
+    REQUIREMENTS:
+    - Data-driven conclusions based on {total_analysts} analyst perspectives
+    - Reference specific research findings where applicable
+    - Balance optimism with realistic risk assessment
+    - Clear, decisive business recommendation
+
 
   market_analysis: |
-    Create comprehensive market analysis meeting consulting standards.
+    Produce detailed market analysis based on comprehensive research.
 
-    RESEARCH BASIS: {research_summary}
+    BUSINESS CONTEXT:
+    - Concept: {restaurant_concept}
+    - Location: {local_area}, {city}, {state} {pincode}
+    - Target Demographic: {target_demographic}
+    - Research Confidence: {confidence_level}
 
-    **CRITICAL: COMPLETE ALL SECTIONS. DO NOT CUT OFF MID-SENTENCE.**
+    RESEARCH DATA:
+    - Supporting Insights: {supporting_data_points}
+    - Key Findings: {key_research_insights}
+    - Data Quality: {data_quality_indicator}
 
-    ANALYTICAL FRAMEWORK:
-    - Data-driven insights with clear sources
-    - Industry benchmark comparisons  
-    - Integrated SWOT analysis
-    - Realistic market sizing
+    ✅ DO:
+    - Use ONLY verified, non-contradictory numbers
+    - Name EXACT competitors (with addresses if possible)
+    - Compare to city/sector averages
+    - State exact location pros/cons
+    - Calculate: (Foot traffic × realistic conversion rate)
 
-    REQUIRED ANALYSIS SECTIONS - MUST COMPLETE ALL:
+    ❌ DON'T:
+    - Include conflicting data - choose most reliable source
+    - Use generic labels like "young professionals"
+    - Say "good location" without specific advantages
+    - List trends without local proof
+    - Use incomplete tables or cutoff sentences
 
-    1. MARKET OVERVIEW & SIZING
-    - Total Addressable Market (TAM): Quantify overall market value with basis
-    - Serviceable Available Market (SAM): Define reachable customer base with calculation
-    - Market Growth Trends: Historical and projected CAGR with timeframes
-    - Market Drivers: Key factors influencing growth with specific examples
+    REQUIRED SECTIONS:
+    1. MARKET SIZE & DEMOGRAPHICS - Quantitative assessment of target market
+    2. COMPETITIVE LANDSCAPE - Direct and indirect competitors in area
+    3. CONSUMER BEHAVIOR PATTERNS - Spending habits and preferences
+    4. LOCATION ANALYSIS - Foot traffic, accessibility, visibility assessment
+    5. MARKET TRENDS & GROWTH - Current and projected market dynamics
 
-    2. COMPETITIVE LANDSCAPE  
-    - Direct Competitors: Top 5 Specific restaurant names, locations, offerings and best selling Products
-    - Indirect Competitors: Alternative dining options and their market position
-    - Market Share Analysis: Estimated competitor positioning with percentages
-    - Competitive Matrix: Complete table comparing price, quality, service
-    - Pricing Benchmarking: Current market price points with ranges
+    ANALYSIS GUIDELINES:
+    - Base all conclusions on research data from {total_analysts} sources
+    - Include specific location references and data points
+    - Highlight both opportunities and market challenges
+    - Provide comparative analysis where relevant
+    - Use tables with only complete data
+    - Do not use cutoff or incomplete sentences.
 
-    3. CONSUMER INSIGHTS
-    - Demographic Analysis: Age, income, occupation profiles with specific ranges
-    - Psychographic Profiling: Lifestyle, preferences, values with details
-    - Spending Behavior: Average order values, frequency, patterns
-    - Consumption Trends: Changing preferences, habits, emerging patterns
-
-    4. LOCATION ASSESSMENT
-    - Geographic Analysis: Area characteristics, advantages, limitations
-    - Foot Traffic Patterns: Customer volume estimates, peak times
-    - Accessibility Evaluation: Transportation, parking, visibility factors
-    - Co-location Opportunities: Complementary businesses, synergies
-
-    **IMPORTANT: Write complete paragraphs. Fill all tables completely. Do not leave sections unfinished.**
 
   financial_recommendations: |
-    Create complete financial analysis for investment decision.
+    Develop financial recommendations based on market research.
 
-    RESEARCH INPUT: {research_summary}
-    CAPITAL: {investment}
+    BUSINESS PARAMETERS:
+    - Concept: {restaurant_concept}
+    - Investment Base: {investment}
+    - Location: {local_area}, {city}
+    - Target Market: {target_demographic}
 
-    **CRITICAL: COMPLETE ALL TABLES AND CALCULATIONS. NO INCOMPLETE CONTENT.**
+    RESEARCH CONTEXT:
+    - Data Quality: {research_quality}
+    - Analyst Inputs: {total_analysts} perspectives
+    - Market Insights: {key_research_insights}
 
-    FINANCIAL SECTIONS - MUST COMPLETE ALL:
+    ✅ DO:
+    - Start with NON-NEGOTIABLE costs (rent, licenses, utilities)
+    - Calculate DAILY break-even: (customers needed × average bill)
+    - Show 3 scenarios: Bad/Okay/Good months
+    - List exact local prices from research
+    - Warn about cash flow gaps by month
 
-    1. CAPITAL ALLOCATION PLAN
-    Create a complete table with ALL months filled:
-    | Month | Revenue | Capacity Utilization | Growth Rate |
-    |-------|---------|---------------------|-------------|
-    | 1     | [calculate] | 40% | Baseline |
-    | 2     | [calculate] | 50% | 25% growth |
-    | 3     | [calculate] | 60% | 20% growth |
-    | 4     | [calculate] | 70% | 17% growth |
-    | 5     | [calculate] | 75% | 7% growth |
-    | 6     | [calculate] | 80% | 7% growth |
-    | 7-12  | [calculate monthly] | 80-85% | Stabilized |
+    ❌ DON'T:
+    - Assume perfect execution or best-case scenarios
+    - Hide cash flow timing issues
+    - Use industry averages without local adjustment
+    - Forget seasonal/holiday impacts
+    - Create incomplete tables or partial sentences
 
-    2. PROFIT & LOSS FORECAST
-    - COGS: 32% of revenue (restaurant industry standard)
-    - Labor Costs: 25% of revenue  
-    - Rent & Utilities: 12% of revenue
-    - Marketing: 8% of revenue
-    - Other Expenses: 8% of revenue
-    - EBITDA Margin: Calculate based on above
+    FINANCIAL FRAMEWORK:
+    1. CAPITAL ALLOCATION STRATEGY
+       - Startup costs breakdown
+       - Working capital requirements
+       - Contingency planning
 
-    3. INVESTMENT METRICS
-    - ROI: Calculate based on ₹350,000 investment
-    - Break-even: Calculate months to profitability
-    - Payback Period: Estimate capital recovery timeline
+    2. REVENUE PROJECTIONS
+       - Realistic sales forecasts based on market data
+       - Pricing strategy aligned with local market
+       - Seasonality and growth projections
 
-    **MANDATORY: All tables must be fully populated. All calculations must be shown.**
+    3. COST STRUCTURE ANALYSIS
+       - Fixed vs variable costs
+       - Local cost factors (rent, labor, utilities)
+       - Efficiency recommendations
+
+    4. FINANCIAL METRICS
+       - Break-even analysis
+       - Return on investment timeline
+       - Cash flow management
+
+    REQUIREMENTS:
+    - All projections must be justified by research data
+    - Include location-specific cost factors
+    - Provide realistic, conservative estimates
+    - Highlight key financial risks and mitigations
+    - Use tables with only complete data
+    - Do not use cutoff or incomplete sentences.
+
 
   risk_assessment: |
-    Create complete enterprise risk management framework.
+    Conduct comprehensive risk assessment for restaurant venture.
 
-    RESEARCH BASIS: {research_summary}
+    BUSINESS CONTEXT:
+    - Concept: {restaurant_concept}
+    - Location: {local_area}, {city}
+    - Investment: {investment}
+    - Research Basis: {total_analysts} analyst perspectives
 
-    **CRITICAL: COMPLETE ALL RISK CATEGORIES. NO INCOMPLETE SECTIONS.**
+    IDENTIFIED RISKS:
+    {supporting_data_points}
 
-    RISK CATEGORIES & ANALYSIS - MUST COMPLETE ALL:
+    ✅ DO:
+    - Rank risks by "Will this kill the business?"
+    - Connect each risk to SPECIFIC data from research
+    - Give TESTABLE mitigation (not "monitor the situation")
+    - Include timing (e.g., "Risk peaks in monsoon season")
+    - Use complete table rows with all columns filled
 
-    1. STRATEGIC RISKS (Complete all)
-    - Market Acceptance: Customer adoption uncertainty
-    - Competitive Response: Rival reaction scenarios  
-    - Brand Positioning: Market differentiation challenges
-    - Economic Factors: Macroeconomic impacts
+    ❌ DON'T:
+    - List generic business risks everyone faces
+    - Recommend vague actions like "have a plan"
+    - Separate likelihood from impact assessment
+    - Ignore location-specific threats
+    - Leave table cells empty or use incomplete sentences
 
-    2. OPERATIONAL RISKS (Complete all) 
-    - Supply Chain: Vendor reliability and costs
-    - Staffing: Recruitment, training, retention
-    - Quality Control: Consistency and standards
-    - Technology: Systems and process failures
+    RISK ASSESSMENT FRAMEWORK:
 
-    3. FINANCIAL RISKS (Complete all)
-    - Cash Flow: Working capital management
-    - Cost Escalation: Input price increases  
-    - Revenue Volatility: Demand fluctuations
-    - Financing: Capital availability and cost
+    1. MARKET & COMPETITIVE RISKS
+       - Competition intensity and response
+       - Market saturation concerns
+       - Changing consumer preferences
 
-    4. COMPLIANCE RISKS (Complete all)
-    - Regulatory: Licensing and permit requirements
-    - Health & Safety: Standards and inspections
-    - Employment: Labor law compliance
-    - Environmental: Waste management and sustainability
+    2. OPERATIONAL RISKS
+       - Location-specific operational challenges
+       - Supply chain and vendor reliability
+       - Staffing and management issues
 
-    **FOR EACH RISK: Provide complete Risk Score, Mitigation Strategy, Responsibility, Timeline, Monitoring**
+    3. FINANCIAL RISKS
+       - Revenue volatility and seasonality
+       - Cost escalation and margin pressure
+       - Capital requirements and cash flow
+
+    4. EXTERNAL RISKS
+       - Regulatory and compliance requirements
+       - Economic and demographic shifts
+       - Location-specific environmental factors
+
+    FOR EACH RISK CATEGORY:
+    - Likelihood assessment (High/Medium/Low)
+    - Potential impact analysis
+    - Recommended mitigation strategies
+    - Monitoring and response planning
+    - Use tables with only complete data
+    - Do not use cutoff or incomplete sentences.
+
+
+  implementation_roadmap: |
+    Create practical implementation roadmap for restaurant launch.
+
+    BUSINESS CONTEXT:
+    - Concept: {restaurant_concept}
+    - Location: {local_area}, {city}, {state}
+    - Investment Scope: {investment}
+
+    RESEARCH INSIGHTS:
+    - Market Readiness: {research_quality}
+    - Key Success Factors: {key_research_insights}
+
+    ✅ DO:
+    - List PHYSICAL actions (sign lease, buy fridge, hire cook)
+    - Assign ONE responsible person per task
+    - Include "STOP IF" conditions for deal-breakers
+    - Budget time AND money for each phase
+    - Consider local regulatory wait times
+
+    ❌ DON'T:
+    - Include "strategic planning" as a task
+    - Assume tasks can happen in parallel
+    - Forget local license processing times
+    - Make success dependent on perfect conditions
+    - Create unrealistic timelines
+
+    IMPLEMENTATION PHASES:
+
+    PHASE 1: PRE-LAUNCH (Months 1-3)
+    - Legal and regulatory compliance
+    - Location finalization and lease negotiation
+    - Business registration and licenses
+    - Initial team assembly
+
+    PHASE 2: SETUP & DEVELOPMENT (Months 4-6)
+    - Space build-out and interior design
+    - Equipment procurement and installation
+    - Menu development and testing
+    - Staff hiring and training
+
+    PHASE 3: LAUNCH PREPARATION (Months 7-8)
+    - Marketing and promotional campaigns
+    - Supplier and vendor contracts
+    - Operational systems implementation
+    - Soft launch and testing
+
+    PHASE 4: GRAND OPENING & OPERATIONS (Month 9+)
+    - Grand opening event
+    - Ongoing operations management
+    - Performance monitoring and optimization
+    - Growth and expansion planning
+
+    REQUIREMENTS:
+    - Include specific timelines and milestones
+    - Assign responsibility areas
+    - Include key decision points
+    - Provide practical, actionable steps
+
+
+  conclusion: |
+    Provide final conclusion and strategic recommendation.
+
+    BUSINESS CONTEXT:
+    - Concept: {restaurant_concept}
+    - Location: {local_area}, {city}, {state}
+    - Investment: {investment}
+    - Research Quality: {research_quality}
+
+    KEY FINDINGS SUMMARY:
+    - Market Opportunity: {key_research_insights}
+    - Competitive Position: {supporting_data_points}
+    - Financial Outlook: Based on {total_analysts} analyst assessments
+
+    ✅ DO:
+    - Answer: "Would you invest your own money here?"
+    - Name the ONE thing that must go right
+    - Suggest a CHEAP TEST before full commitment
+    - State when to re-evaluate (e.g., "Check at 3 months")
+    - Be brutally honest about risks
+
+    ❌ DON'T:
+    - Repeat earlier sections verbatim
+    - Sit on the fence - give clear direction
+    - Recommend "more research" as an action
+    - Ignore the investor's risk tolerance
+    - Make promises based on best-case only
+
+    CONCLUSION STRUCTURE:
+    1. OVERALL FEASIBILITY ASSESSMENT
+       - Go/No-Go recommendation with confidence level
+       - Key success factors and potential challenges
+
+    2. CRITICAL SUCCESS FACTORS
+       - Must-have elements for business success
+       - Differentiators and competitive advantages
+
+    3. STRATEGIC RECOMMENDATIONS
+       - Immediate next steps if proceeding
+       - Key considerations for implementation
+       - Risk management priorities
+
+    4. LONG-TERM OUTLOOK
+       - Growth potential and expansion opportunities
+       - Sustainability and scalability assessment
+
+    REQUIREMENTS:
+    - Clear, decisive recommendation
+    - Evidence-based justification
+    - Practical implementation guidance
+    - Balanced risk-reward assessment
+
 
 # =====================================
-# REPORT TEMPLATES - PROFESSIONAL FORMAT
+# FINAL REPORT TEMPLATE
 # =====================================
 report_templates:
   final_report: |
-    # RESTAURANT BUSINESS FEASIBILITY REPORT
-    **Professional Investment Analysis**
+    # COMPREHENSIVE RESTAURANT FEASIBILITY REPORT
+    ## Market Research & Business Analysis
 
-    ## DOCUMENT INDEX
-    *Generated: {timestamp}*
+    **Report Generated**: {timestamp}  
+    **Concept**: {restaurant_concept}  
+    **Proposed Location**: {local_area}, {city}, {state} {pincode}  
+    **Investment Scope**: {investment}  
+    **Target Market**: {target_demographic}  
+    **Research Basis**: {research_metrics}
+    **Analysts**: {total_analysts}
 
-    ### EXECUTIVE SECTIONS
-    1.0 Executive Summary .......................................................................... 2
-    2.0 Table of Contents ......................................................................... 3  
-    3.0 Introduction & Methodology ........................................................... 4
-
-    ### ANALYTICAL SECTIONS
-    4.0 Comprehensive Market Analysis ...................................................... 5
-      4.1 Market Overview & Sizing
-      4.2 Competitive Landscape
-      4.3 Consumer Insights
-      4.4 Location Assessment
-
-    5.0 Financial Analysis & Projections ................................................. 12
-      5.1 Investment Requirements
-      5.2 Revenue Projections  
-      5.3 Financial Metrics
-      5.4 Scenario Analysis
-
-    6.0 Risk Assessment & Mitigation ...................................................... 18
-      6.1 Strategic Risks
-      6.2 Operational Risks
-      6.3 Financial Risks
-      6.4 Compliance Risks
-
-    ### STRATEGIC SECTIONS
-    7.0 Implementation Roadmap ................................................................ 22
-    8.0 Conclusions & Recommendations ..................................................... 24
-    9.0 Appendices ................................................................................. 26
-
-    ---
-
-    ## 1.0 EXECUTIVE SUMMARY
+    ## EXECUTIVE SUMMARY
     {executive_summary}
 
-    <!-- PAGE BREAK -->
-    <div style="page-break-after: always;"></div>
-
-    ## 2.0 TABLE OF CONTENTS
-    *Refer to Document Index above for complete section navigation*
-
-    <!-- PAGE BREAK -->
-    <div style="page-break-after: always;"></div>
-
-    ## 3.0 INTRODUCTION & METHODOLOGY
-
-    **RESEARCH OBJECTIVES:**
-    This report provides comprehensive market analysis and investment feasibility assessment for {restaurant_concept} in {target_location}.
-
-    **METHODOLOGY:**
-    - Multi-source market intelligence gathering
-    - Competitive benchmarking analysis
-    - Financial modeling using industry standards
-    - Risk assessment with quantitative scoring
-
-    **KEY PARAMETERS:**
-    - Investment Scope: {investment}
-    - Target Market: {target_demographic}
-    - Geographic Focus: {target_location}
-
-    <!-- PAGE BREAK -->
-    <div style="page-break-after: always;"></div>
-
-    ## 4.0 COMPREHENSIVE MARKET ANALYSIS
+    ## 1.0 MARKET ANALYSIS
     {market_analysis}
 
-    <!-- PAGE BREAK -->
-    <div style="page-break-after: always;"></div>
-
-    ## 5.0 FINANCIAL ANALYSIS & PROJECTIONS
+    ## 2.0 FINANCIAL ANALYSIS & RECOMMENDATIONS
     {financial_recommendations}
 
-    <!-- PAGE BREAK -->
-    <div style="page-break-after: always;"></div>
-
-    ## 6.0 RISK ASSESSMENT & MITIGATION
+    ## 3.0 RISK ASSESSMENT & MITIGATION
     {risk_assessment}
 
-    <!-- PAGE BREAK -->
-    <div style="page-break-after: always;"></div>
+    ## 4.0 IMPLEMENTATION ROADMAP
+    {implementation_roadmap}
 
-    ## 7.0 IMPLEMENTATION ROADMAP
-
-    **PHASE 1: PRE-LAUNCH (MONTHS 1-3)**
-    - Finalize location selection and lease negotiation
-    - Complete regulatory compliance and licensing
-    - Develop supplier partnerships and menu finalization
-    - Recruit and train core operational team
-
-    **PHASE 2: LAUNCH (MONTHS 4-6)**
-    - Soft launch with limited menu and operational testing
-    - Marketing campaign execution and brand positioning
-    - Customer feedback integration and operational refinement
-    - Financial performance monitoring against projections
-
-    **PHASE 3: GROWTH (MONTHS 7-12)**
-    - Full-scale operations with optimized menu
-    - Customer retention and loyalty program implementation
-    - Performance analysis and strategic adjustments
-    - Expansion feasibility assessment
-
-    <!-- PAGE BREAK -->
-    <div style="page-break-after: always;"></div>
-
-    ## 8.0 CONCLUSIONS & RECOMMENDATIONS
-
-    **INVESTMENT THESIS:**
-    Based on comprehensive analysis, this report concludes on the viability of {restaurant_concept} with the following key findings:
-
-    **STRATEGIC RECOMMENDATIONS:**
-    1. **Proceed with Investment** - Market conditions support concept viability
-    2. **Location Optimization** - Implement findings from location intelligence
-    3. **Competitive Positioning** - Execute differentiation strategy outlined in market analysis
-    4. **Risk Management** - Deploy mitigation strategies as per risk assessment
-
-    **SUCCESS METRICS:**
-    - Monthly Revenue Target: Achieve 70% of projection by Month 6
-    - Customer Acquisition: Maintain <20% customer acquisition cost
-    - Operational Efficiency: Achieve 25% EBITDA margin by Month 12
-
-    <!-- PAGE BREAK -->
-    <div style="page-break-after: always;"></div>
-
-    ## 9.0 APPENDICES
-
-    **APPENDIX A: RESEARCH METHODOLOGY DETAILS**
-    - Data sources and collection methods
-    - Analytical frameworks applied
-    - Assumptions documentation
-
-    **APPENDIX B: FINANCIAL MODEL ASSUMPTIONS**
-    - Revenue driver assumptions
-    - Cost structure benchmarks
-    - Sensitivity analysis parameters
-
-    **APPENDIX C: COMPETITIVE ANALYSIS DATA**
-    - Detailed competitor profiles
-    - Market positioning maps
-    - Pricing analysis tables
+    ## 5.0 CONCLUSION & STRATEGIC RECOMMENDATION
+    {conclusion}
 
     ---
-    *Confidential Business Report - Generated for Investment Decision Making*
-    *Report ID: {timestamp} | Concept: {restaurant_concept}*
+    *This feasibility report is based on comprehensive market research conducted by {total_analysts} specialized analysts.*
