@@ -1,7 +1,24 @@
+# src\configuration\prompts.yaml
+
 # =====================================
 # ANALYST GENERATION
 # =====================================
 analyst_generation:
+  input_variables:
+    [
+      "max_analysts",
+      "restaurant_concept",
+      "local_area",
+      "city",
+      "state",
+      "pincode",
+      "investment",
+      "target_demographic",
+      "special_note",
+      "available_tools",
+      "required_roles",
+      "feedback"
+    ]
   dynamic_analysts: |
     Generate exactly {max_analysts} analysts for comprehensive restaurant market research.
 
@@ -11,12 +28,14 @@ analyst_generation:
     - Investment: {investment}
     - Target Market: {target_demographic}
     - Special Focus: {special_note}
+    - human feedback (mandatory): {feedback}
     - Available Tools: {available_tools}
     - Required Expertise Areas: {required_roles}
 
     ✅ DO:
     - Cover ALL expertise areas from {required_roles}
     - Create specific role names (e.g., "Local Cost Analyst" not "Market Analyst")
+    - You must modify the analyst team to satisfy this {feedback}. If you cannot, explain why and propose the closest alternative.
     - Match tools directly to each analyst's specific research task
     - Write descriptions that say EXACTLY what data they will find
     - Use {max_analysts} analysts exactly
@@ -55,6 +74,24 @@ analyst_generation:
 # RESEARCH
 # =====================================
 research:
+  input_variables:
+    [
+      "analyst_role",
+      "affiliation",
+      "description",
+      "restaurant_concept",
+      "local_area",
+      "city",
+      "state",
+      "pincode",
+      "full_city",
+      "investment",
+      "target_demographic",
+      "special_note",
+      "research_findings",
+      "structured_data"
+    ]
+
   single_analyst: |
     You are {analyst_role} from {affiliation}, specializing in {description}.
 
@@ -144,6 +181,25 @@ research:
 # REPORT GENERATION
 # =====================================
 reporting:
+  input_variables:
+    [
+      "restaurant_concept",
+      "local_area",
+      "city",
+      "state",
+      "pincode",
+      "investment",
+      "target_demographic",
+      "research_quality",
+      "successful_tools",
+      "analyst_consensus",
+      "key_research_insights",
+      "total_analysts",
+      "confidence_level",
+      "supporting_data_points",
+      "data_quality_indicator"
+    ]
+
   executive_summary: |
     Generate a comprehensive executive summary for restaurant feasibility.
 
@@ -461,6 +517,26 @@ reporting:
 # FINAL REPORT TEMPLATE
 # =====================================
 report_templates:
+  input_variables:
+    [
+      "timestamp",
+      "restaurant_concept",
+      "local_area",
+      "city",
+      "state",
+      "pincode",
+      "investment",
+      "target_demographic",
+      "research_metrics",
+      "total_analysts",
+      "executive_summary",
+      "market_analysis",
+      "financial_recommendations",
+      "risk_assessment",
+      "implementation_roadmap",
+      "conclusion"
+    ]
+    
   final_report: |
     # COMPREHENSIVE RESTAURANT FEASIBILITY REPORT
     ## Market Research & Business Analysis

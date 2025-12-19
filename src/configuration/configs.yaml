@@ -42,12 +42,6 @@ analysis:
   max_compressed_items: 10
   enable_data_compression: true
   required_roles: ["market research", "financial Analyst", "location intelligence", "competition analysis", "consumer insights"]
-  keywords:
-    market_insights: ["demand", "trend", "growth", "opportunity", "popular", "preference"]
-    competitor_data: ["competitor", "competition", "rival", "competing", "market share"]
-    financial_data: ["revenue", "profit", "investment", "roi", "margin", "cost", "price", "budget"]
-    risk_factors: ["risk", "challenge", "threat", "issue", "problem", "concern"]
-    demographics: ["demographic", "age", "income", "professional", "customer", "target", "audience"]
 
 # =====================================
 # BUSINESS CASE CONFIGURATION
@@ -69,7 +63,7 @@ business_case:
 # RESEARCH CONFIGURATION
 # =====================================
 research:
-  max_analysts: 1
+  max_analysts: 6
   max_retries: 2
   tavily_max_results: 10
   enable_sequential_fallback: true
@@ -113,7 +107,7 @@ tools:
 # =====================================
 defaults:
   primary_llm: groq             
-  team_creator_llm: mistral     
+  team_creator_llm: groq  
   research_llm: openai
   report_compiler_llm: groq
 
@@ -127,21 +121,21 @@ models:
       import_path: langchain_groq.ChatGroq
       api_key: ${GROQ_API_KEY}
       temperature: 0.3
-      max_tokens: 2000
+      max_tokens: 1000
 
     mistral:
       model: mistral-small  # Change from model_name to model
       import_path: langchain_mistralai.ChatMistralAI
       api_key: ${MISTRAL_API_KEY}
       temperature: 0.6
-      max_tokens: 512
+      max_tokens: 300
 
     openai:
       model: gpt-4o-mini
       import_path: langchain_openai.ChatOpenAI
       api_key: ${OPENAI_API_KEY}
       temperature: 0.7
-      max_tokens: 512
+      max_tokens: 1000
 
     google:
       model: gemini-1.5-flash

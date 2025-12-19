@@ -2,21 +2,21 @@
 
 A comprehensive AI-powered market research platform that generates professional investment-grade feasibility reports for restaurant businesses using multi-agent parallel research and LangGraph workflows.
 
-## 🚀 Overview
+## Overview
 
 This system automates comprehensive market research for restaurant investments by leveraging specialized AI analysts that conduct parallel research across multiple data sources. It produces professional business feasibility reports with market analysis, financial projections, and risk assessment.
 
-## ✨ Features
+## Features
 
-- **🤖 Dynamic Analyst Teams**: AI-generated specialized research analysts with unique roles and tool assignments
-- **🔍 Parallel Research Engine**: Concurrent data gathering using multiple research tools and APIs
-- **📊 Professional Reporting**: Investment-grade business feasibility reports in multiple formats
-- **🔄 LangGraph Workflows**: Robust state management with human-in-the-loop feedback
-- **🔧 Multi-Tool Integration**: Tavily Search, Google Trends, OpenStreetMap, Google Maps APIs
-- **📈 Financial Modeling**: Complete financial projections and ROI analysis
-- **⚡ Async Processing**: Non-blocking parallel research execution
+- **Dynamic Analyst Teams**: AI-generated specialized research analysts with unique roles and tool assignments
+- **Parallel Research Engine**: Concurrent data gathering using multiple research tools and APIs
+- **Professional Reporting**: Investment-grade business feasibility reports in multiple formats
+- **LangGraph Workflows**: Robust state management with human-in-the-loop feedback
+- **Multi-Tool Integration**: Tavily Search, Google Trends, OpenStreetMap, Google Maps APIs
+- **Financial Modeling**: Complete financial projections and ROI analysis
+- **Async Processing**: Non-blocking parallel research execution
 
-## 🏗️ System Architecture
+## System Architecture
 
 ### Three-Graph Workflow
 
@@ -35,7 +35,7 @@ This system automates comprehensive market research for restaurant investments b
    - Multiple export formats (Markdown, JSON)
    - Executive summaries and detailed analysis
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 restaurant_research/
@@ -68,7 +68,177 @@ restaurant_research/
 └── configs.yaml                  # Application configuration
 ```
 
-## 🛠️ Installation
+
+**Here are one-liners for all project files:**
+
+## **ROOT LEVEL**
+- `.env` → Environment variables for API keys and configurations
+- `main.py` → Primary entry point for the restaurant research system
+- `requirements.txt` → Python dependencies for the entire project
+- `README.md` → Project documentation and setup instructions
+- `api_tester.py` → Utility to test API endpoints and workflows
+
+## **CONFIGURATION LAYER**
+- `configs.yaml` → Central configuration defining business rules, tools, and LLM settings
+- `prompts.yaml` → Expert knowledge base with specialized prompts for each workflow phase
+- `config_loader.py` → Singleton service that loads and provides configuration access
+- `prompts_loader.py` → Prompt template manager with versioning and validation
+
+## **WORKFLOW ENGINE**
+- `analyst_team_creator.py` → Generates specialized analyst teams using LLM with human feedback loop
+- `parallel_research_engine.py` → Executes parallel research across multiple analysts with fault isolation
+- `report_compiler.py` → Transforms research findings into professional multi-format business reports
+- `research_orchestrator.py` → Master conductor coordinating the complete three-phase research pipeline
+
+## **CORE INFRASTRUCTURE**
+- `states.py` → Typed state definitions and custom reducers for LangGraph workflow management
+- `model_loader.py` → Factory pattern for abstracting LLM provider selection and initialization
+- `tool_loader.py` → Dynamic tool registry and execution manager for research operations
+- `custom_exception.py` → Domain-specific exception hierarchy with structured error contexts
+- `logger.py` → Structured logging implementation with different severity levels and formatting
+
+## **UTILITIES & EXPORTS**
+- `report_exporter.py` → Multi-format report exporter (JSON for machines, Markdown for humans)
+
+## **DEPLOYMENT & OPERATIONS**
+- `deploy.yml` → GitHub Actions workflow for automated deployment
+- `infra.yml` → Infrastructure provisioning and management
+- `eks-with-ecr.yaml` → EKS cluster configuration with ECR integration
+- `deployment.yaml` → Kubernetes deployment manifests for container orchestration
+- `service.yaml` → Kubernetes service definitions for network exposure
+
+## **FRONTEND & UI**
+- `index.html` → Web interface for user interaction and report visualization
+- `style.css` → Styling for the web application interface
+
+## **EXPERIMENTS & TESTING**
+- Notebook files → Jupyter notebooks for prototyping and experimentation
+- `test_model.py` → Unit tests for model loading and LLM interactions
+
+## **LOGS & OUTPUTS**
+- Log files → Timestamped execution logs for monitoring and debugging
+- `execution_explanation/` → Detailed documentation of each workflow's execution sequence
+
+## **THE COMPLETE STORY IN 4 LINES:**
+```
+configs.yaml → Defines WHAT to research (business rules & tools)
+prompts.yaml → Defines HOW to research (expert knowledge encoded)
+Three workflow files → Execute the research (team → research → report)
+Orchestrator.py → Coordinates everything into a single API call
+```
+
+## **`1. analyst_team_creator.py` - Specialist Team Factory**
+
+### **Class Level**
+- `AnalystTeamCreator` → Orchestrates dynamic analyst team generation with human feedback loops
+
+### **Initialization & Setup**
+- `__init__()` → Loads configuration, models, prompts, and builds the LangGraph workflow
+- `_build_graph()` → Constructs the state machine with three nodes and conditional feedback loop
+
+### **Core Processing Functions**
+- `_extract_json_array()` → Safely extracts JSON from LLM's messy output using multiple regex patterns
+- `_validate_analyst_data()` → Validates and sanitizes individual analyst definitions against schema
+- `load_dynamic_analysts()` → LangGraph node: Generates analyst team via LLM with context-aware prompting
+- `human_feedback()` → LangGraph node: Presents team for human approval and collects improvement instructions
+- `final_research_team()` → LangGraph node: Finalizes team composition with analytics and logging
+
+### **Control Flow Functions**
+- `route_feedback()` → Conditional router: Decides next step based on user acceptance and retry limits
+- `create_team()` → Public API: Executes the complete team creation workflow with error handling
+
+---
+
+## **`2. parallel_research_engine.py` - Parallel Research Execution Engine**
+
+### **Class Level**
+- `ParallelResearchEngine` → Executes parallel research across multiple analysts with fault isolation
+
+### **Initialization & Setup**
+- `__init__()` → Configures research tools, loads LLM models, and builds parallel execution graph
+- `_build_graph()` → Creates workflow with parallel Send operations for concurrent analyst research
+
+### **Context & Parameter Builders**
+- `_extract_location()` → Safely extracts location data from state with defensive validation
+- `_build_tool_context()` → Constructs execution context with guaranteed field availability for each analyst
+- `_build_tool_parameters()` → Generates tool-specific parameters from templates with error handling
+
+### **Core Execution Functions**
+- `_execute_single_tool()` → Executes individual tool with comprehensive error detection and status tracking
+- `_process_research_findings()` → Aggregates successful tool outputs into concise summary without LLM calls
+- `_build_analysis_context()` → Prepares context for LLM-based analysis generation with research data
+- `_parse_analysis_output()` → Cleans and extracts insights from LLM analysis with robust pattern matching
+
+### **Workflow Nodes**
+- `create_research_tasks()` → LangGraph node: Transforms analyst team into executable research tasks
+- `initiate_parallel_research()` → Conditional router: Creates parallel Send operations for each analyst
+- `execute_single_analyst_research()` → LangGraph node: Executes complete research cycle for one analyst
+- `compile_research_summary()` → LangGraph node: Aggregates all parallel results into comprehensive summary
+
+### **Public API**
+- `execute_research()` → Main entry point: Orchestrates complete parallel research execution
+
+---
+
+## **`3. report_compiler.py` - Professional Report Generation System**
+
+### **Class Level**
+- `ReportCompiler` → Transforms research findings into polished business reports with multi-format export
+
+### **Initialization & Setup**
+- `__init__()` → Loads report templates, section prompts, and builds linear compilation pipeline
+- `_build_graph()` → Constructs sequential workflow for section-by-section report generation
+
+### **Context Builders**
+- `_get_location_context()` → Extracts location data with configuration fallbacks
+- `_get_business_context()` → Gathers business parameters and research quality metrics
+- `_build_research_context()` → Creates research confidence indicators and data quality scores
+
+### **Content Processing**
+- `_validate_section_content()` → Cleans and validates generated content for length and formatting
+- `_compile_section_with_fallback()` → Core engine: Generates report sections with graceful degradation
+- `_create_fallback_report()` → Creates minimal viable report when primary generation fails
+
+### **Section Generators (Workflow Nodes)**
+- `compile_executive_summary()` → Creates the high-level business case overview and recommendation
+- `compile_market_analysis()` → Generates detailed market opportunity and competitive landscape
+- `compile_financial_recommendations()` → Produces investment analysis and financial projections
+- `compile_risk_assessment()` → Identifies and mitigates business risks with location-specific factors
+- `compile_implementation_roadmap()` → Creates step-by-step launch plan with timelines and responsibilities
+- `compile_conclusion()` → Provides final strategic recommendation and next steps
+- `compile_final_report()` → Assembles all sections into professionally formatted final report
+
+### **Export & Delivery**
+- `save_all_reports()` → Exports reports in configured formats (JSON for machines, Markdown for humans)
+- `display_export_summary()` → Presents export results and research metrics to user
+
+### **Public API**
+- `compile_reports()` → Main entry point: Executes complete report compilation and export pipeline
+
+---
+
+## **`4. research_orchestrator.py` - Master Pipeline Orchestrator**
+
+### **Class Level**
+- `RestaurantResearchSystem` → Top-level coordinator managing the complete three-phase research pipeline
+
+### **Initialization & Setup**
+- `__init__()` → Initializes all three workflow components with shared configuration
+- `_build_initial_state()` → Creates initial ResearchState with user inputs and configuration defaults
+
+### **Validation & Logging**
+- `_validate_critical_parameters()` → Validates minimum viable inputs (concept, location) before execution
+- `_log_research_parameters()` → Logs key research parameters for monitoring and debugging
+
+### **Pipeline Execution**
+- `run_research()` → Main public API: Executes complete three-phase pipeline with comprehensive error handling
+- `run_default_research()` → Convenience method: Executes research using only configuration defaults
+
+### **Standalone Execution**
+- `main()` → Command-line entry point: Runs complete system with console output and result display
+
+
+## Installation
 
 ### Prerequisites
 
@@ -77,13 +247,12 @@ restaurant_research/
   - Groq API
   - Tavily AI
   - SerpAPI (Google Trends & Maps)
-  - OpenStreetMap (free)
 
 ### Quick Start
 
 1. **Clone and setup environment:**
 ```bash
-git clone <repository-url>
+git clone https://github.com/gawaliashay/restaurant_market_research.git
 cd restaurant_market_research
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -105,7 +274,7 @@ cp .env.example .env
 python main.py
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -113,7 +282,6 @@ python main.py
 GROQ_API_KEY=your_groq_api_key
 TAVILY_API_KEY=your_tavily_api_key  
 SERPAPI_API_KEY=your_serpapi_api_key
-DATA_PATH=./data/analysis
 REPORTS_DIRECTORY=./reports
 ```
 
@@ -121,9 +289,10 @@ REPORTS_DIRECTORY=./reports
 
 ```yaml
 llm:
-  main_provider: "groq"
-  main_model: "llama-3.3-70b-versatile"
-  fast_model: "llama-3.1-8b-instant"
+  primary_llm: groq             
+  team_creator_llm: Mistral  
+  research_llm: openai
+  report_compiler_llm: groq
 
 research:
   max_analysts: 4
@@ -137,15 +306,12 @@ tools:
   google_trends:
     name: "Google Trends" 
     description: "Trend analysis and popularity data"
-  openstreetmap:
-    name: "OpenStreetMap"
-    description: "Location data and coordinates"
   google_maps:
     name: "Google Maps"
     description: "Nearby places and businesses"
 ```
 
-## 🚀 Usage
+## Usage
 
 ### Basic Execution
 
@@ -182,7 +348,7 @@ custom_state = ResearchState(
 )
 ```
 
-## 📊 Output Formats
+## Output Formats
 
 ### Generated Reports Include:
 
@@ -197,95 +363,17 @@ custom_state = ResearchState(
 - **Markdown** (`report.md`) - Professional formatted document
 - **JSON** (`report.json`) - Structured data for integration
 
-## 🔧 API Integration
+## API Integration
 
 ### Research Tools Available:
 
 - **Tavily Search**: Web search and market intelligence
 - **Google Trends**: Popularity and demand analysis  
-- **OpenStreetMap**: Location and geographic data
 - **Google Maps**: Competitor mapping and local business data
 
-### Adding Custom Tools:
 
-```python
-# In src/common/tool_loader.py
-def use_custom_tool(state: Dict) -> Dict:
-    """Custom research tool implementation"""
-    return {
-        "tool": "custom_tool",
-        "data": custom_data,
-        "status": "success"
-    }
-
-# Register in tool_loader
-tool_loader["custom_tool"] = use_custom_tool
-```
-
-## 🎯 Example Output
-
-The system generates comprehensive reports including:
-
-```markdown
-# RESTAURANT BUSINESS FEASIBILITY REPORT
-
-## Executive Summary
-Market analysis reveals 70% demand for healthy food options in target area...
-Competitive landscape shows limited momo specialty restaurants...
-Financial projections indicate 180% ROI with 7-month payback...
-
-## Market Analysis  
-- TAM: ₹1.2B, SAM: ₹60M
-- 15% CAGR projected growth
-- Direct competitors: Momos Junction (5% share), Momo Point (20% share)
-
-## Financial Projections
-- Year 1 Revenue: ₹4.2M
-- EBITDA Margin: 15%
-- Break-even: 7 months
-```
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our contributing guidelines:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Development Setup
-
-```bash
-# Install development dependencies
-pip install -r requirements-dev.txt
-
-# Run tests
-pytest tests/
-
-# Code formatting
-black src/ tests/
-```
-
-## 📝 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
-
-For support and questions:
-- 📧 Email: support@restaurantresearch.ai
-- 🐛 Issues: [GitHub Issues](https://github.com/your-repo/issues)
-- 📚 Documentation: [Project Wiki](https://github.com/your-repo/wiki)
-
-## 🙏 Acknowledgments
-
-- LangGraph team for the workflow framework
-- Groq for high-performance LLM inference
-- Tavily AI for web search capabilities
-- OpenStreetMap community for geographic data
-
----
 
 **Built with ❤️ for restaurant entrepreneurs and investors**

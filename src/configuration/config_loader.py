@@ -46,7 +46,6 @@ class AnalysisConfig(BaseModel):
     max_key_insights: int
     max_compressed_items: int
     enable_data_compression: bool
-    keywords: Dict[str, list]
     required_roles: list
 
 class BusinessCaseConfig(BaseModel):
