@@ -1,55 +1,28 @@
-## src\configuration\configs.yaml
+# src\configuration\configs.yaml
 
 # =====================================
 # PATHS & DIRECTORIES
 # =====================================
 paths:
-  data: ${DATA_PATH:-data/analysis}
-  vector_store: ${VECTOR_STORE_PATH:-vectorstore/}
-  reports: ${REPORTS_DIRECTORY:-reports}
+  data: ${DATA_PATH}
+  vector_store: ${VECTOR_STORE_PATH}
+  reports: ${REPORTS_DIRECTORY}
+  logs_dir: logs/
 
 # =====================================
 # APPLICATION CONFIGURATION
 # =====================================
 app:
-  name: ${PROJECT_NAME:-restaurant_research}
-  env: ${ENV:-development}
-  host: ${HOST:-127.0.0.1}
-  port: ${PORT:-8000}
-  cors_origins: ${ALLOWED_ORIGINS:-*}
-
-# =====================================
-# LLM CONFIGURATION
-# =====================================
-llm:
-  main_provider: "groq"
-  # main_model: "openai/gpt-oss-safeguard-20b"
-  #main_model: "moonshotai/kimi-k2-instruct-0905"
-  #main_model: "meta-llama/llama-4-maverick-17b-128e-instruct"
-  main_model: "llama-3.3-70b-versatile"
-  fast_provider: "groq"
-  fast_model: "llama-3.1-8b-instant"
-  temperature: 1
-  fast_temperature: 0.7
-
-# =====================================
-# RESEARCH CONFIGURATION
-# =====================================
-research:
-  max_analysts: 5
-  max_retries: 2
-  tavily_max_results: 10
-  enable_sequential_fallback: true
+  name: ${PROJECT_NAME}
+  env: ${ENV}
+  host: ${HOST}
+  port: ${PORT}   
+  cors_origins: ${ALLOWED_ORIGINS}
 
 # =====================================
 # API CONFIGURATION
 # =====================================
 apis:
-  openstreetmap:
-    base_url: "https://nominatim.openstreetmap.org/search"
-    user_agent: "ResearchApp/1.0"
-    timeout: 10
-    country_codes: "in"
   tavily:
     api_key: ${TAVILY_API_KEY}
   serpapi:
@@ -65,25 +38,90 @@ export:
 # =====================================
 # ANALYSIS CONFIGURATION
 # =====================================
-analysis:
+research:
+
+  max_parallel_sections: 4
+  enable_data_compression: true
   max_key_insights: 5
   max_compressed_items: 10
-  enable_data_compression: true
-  required_roles: ["market research", "financial Analyst", "location intelligence", "competition analysis", "consumer insights"]
-  keywords:
-    market_insights: ["demand", "trend", "growth", "opportunity", "popular", "preference"]
-    competitor_data: ["competitor", "competition", "rival", "competing", "market share"]
-    financial_data: ["revenue", "profit", "investment", "roi", "margin", "cost", "price", "budget"]
-    risk_factors: ["risk", "challenge", "threat", "issue", "problem", "concern"]
-    demographics: ["demographic", "age", "income", "professional", "customer", "target", "audience"]
+
+  sections:
+
+    market_analysis:
+      title: Market Analysis
+      description: Analyze customer demand and market trends.
+      prompt: market_analysis
+      execution_type: parallel
+      tools:
+        - google_trends
+        - tavily_search
+      dependencies: []
+
+    competitive_analysis:
+      title: Competitive Analysis
+      description: Analyze nearby competitors and market positioning.
+      prompt: competitive_analysis
+      execution_type: parallel
+      tools:
+        - google_maps
+        - tavily_search
+      dependencies: []
+
+    financial_analysis:
+      title: Financial Analysis
+      description: Assess investment feasibility.
+      prompt: financial_analysis
+      execution_type: parallel
+      tools:
+        - tavily_search
+      dependencies: []
+
+    compliance_requirements:
+      title: Compliance Requirements
+      description: Research licenses and regulations.
+      prompt: compliance_requirements
+      execution_type: parallel
+      tools:
+        - rag
+      dependencies: []
+
+    risk_assessment:
+      title: Risk Assessment
+      description: Assess business risks using previous findings.
+      prompt: risk_assessment
+      execution_type: sequential
+      tools: []
+      dependencies:
+        - market_analysis
+        - competitive_analysis
+        - financial_analysis
+        - compliance_requirements
+
+    strategic_recommendations:
+      title: Strategic Recommendations
+      description: Generate actionable business recommendations.
+      prompt: strategic_recommendations
+      execution_type: sequential
+      tools: []
+      dependencies:
+        - market_analysis
+        - competitive_analysis
+        - financial_analysis
+        - compliance_requirements
+        - risk_assessment
 
 # =====================================
 # BUSINESS CASE CONFIGURATION
 # =====================================
 business_case:
   default:
-    restaurant_concept: "Setup momo speciality Restaurant"
-    target_location: "Warje, Pune, Maharashtra - 411058"
+    restaurant_concept: "momo Restaurant"
+    location:
+      society: "rise avenue"
+      local_area: "Baner"
+      city: "Pune"
+      state: "Maharashtra"
+      pincode: "411058"
     investment: "₹350,000"
     target_demographic: "Professionals 25-45, health-conscious"
     special_note: "momo demand, spending power, competition density"
@@ -94,27 +132,51 @@ business_case:
 tools:
   tavily_search:
     name: "Tavily Search"
-    description: "Web search for market research"
+    description: "Web search for local area demographics and market trends"
     function: "use_tavily_search"
-    required_params: ["search_query"]
+    tavily_max_results: 10
+    parameters:
+      search_query:
+        template:
+          - "{restaurant_concept} in {local_area} {city}"
+          - "customer demographics in {local_area} {city}"
+          - "food preferences in {local_area} {city}"
+          - "restaurant competition in {local_area} {city}"
+          - "footfall in {local_area} {city}"
+          - "commercial activity in {local_area} {city}"
+        required: true
+    
     
   google_trends:
     name: "Google Trends" 
-    description: "Trend analysis and popularity data"
+    description: "Trend analysis for restaurant concept popularity"
     function: "use_google_trends"
-    required_params: ["trend_query"]
-    
-  openstreetmap:
-    name: "OpenStreetMap"
-    description: "Location data and coordinates"
-    function: "use_openstreetmap" 
-    required_params: ["location"]
+    parameters:
+      trend_query:
+        template: "{restaurant_concept}"
+        required: true
     
   google_maps:
     name: "Google Maps"
-    description: "Nearby places and businesses"
+    description: "City-level competition analysis and business density"
     function: "use_google_maps"
-    required_params: ["location"]
+    parameters:
+      location:
+        template: "{city}, {state}, India"
+        required: true
+      map_query:
+        template: "{restaurant_concept} in {local_area}, {city}" 
+        required: true
+
+
+# =====================================
+# DEFAULTS
+# =====================================
+defaults:
+  primary_llm: groq
+  fast_llm: groq
+  creative_llm: openai
+  analysis_llm: groq
 
 # =====================================
 # MODELS
@@ -122,36 +184,23 @@ tools:
 models:
   llms:
     groq:
-      model: "llama-3.1-8b-instant"
+      model_name: llama-3.1-8b-instant
       import_path: langchain_groq.ChatGroq
       api_key: ${GROQ_API_KEY}
       temperature: 0.3
-      max_tokens: 512
-
-    mistral:
-      model: "mistral-small"  # Changed from model_name to model for consistency
-      import_path: langchain_mistralai.ChatMistralAI
-      api_key: ${MISTRAL_API_KEY}
-      temperature: 0.6
-      max_tokens: 512
+      max_tokens: 4096
 
     openai:
-      model: "gpt-4o-mini"
+      model_name: gpt-4o-mini
       import_path: langchain_openai.ChatOpenAI
       api_key: ${OPENAI_API_KEY}
-      temperature: 0.7
-      max_tokens: 512
-
-    google:
-      model: "gemini-1.5-flash"
-      import_path: langchain_google_genai.ChatGoogleGenerativeAI
-      api_key: ${GOOGLE_API_KEY}
       temperature: 0.3
-      max_tokens: 512
+      max_tokens: 4096
 
 # =====================================
 # REPORT CONFIGURATION
 # =====================================
+# Add to configs.yaml under reporting section
 reporting:
   save_to_file: true
   reports_directory: "reports"
@@ -159,21 +208,287 @@ reporting:
   save_formats: ["md", "json"]
 
 # =====================================
+# REPORT QUALITY CONFIGURATION
+# =====================================
+# Controls how detailed/expensive the report generation is
+# 
+# mode: "balanced"  → Default, good quality, moderate cost
+# mode: "quality"   → Maximum detail, higher cost, for demos/interviews
+# mode: "fast"      → Faster, cheaper, for development/testing
+report_quality:
+  mode: "quality"  # Options: "balanced", "quality", "fast"
+  
+  # Settings used when mode: "quality" (Best quality, higher cost)
+  quality:
+    max_evidence_chars_per_section: 4000
+    max_chars_per_rag_chunk: 1000
+    max_rag_chunks_per_section: 10
+    max_summary_chars_for_sections: 800
+    max_llm_output_tokens: 4096
+    description: "Maximum detail - best for demos and client presentations"
+
+  # Settings used when mode: "balanced" (Default, good balance)
+  balanced:
+    max_evidence_chars_per_section: 2000
+    max_chars_per_rag_chunk: 600
+    max_rag_chunks_per_section: 8
+    max_summary_chars_for_sections: 500
+    max_llm_output_tokens: 2048
+    description: "Good quality with reasonable cost"
+
+  # Settings used when mode: "fast" (Faster, cheaper)
+  fast:
+    max_evidence_chars_per_section: 1000
+    max_chars_per_rag_chunk: 300
+    max_rag_chunks_per_section: 5
+    max_summary_chars_for_sections: 300
+    max_llm_output_tokens: 1024
+    description: "Fast and cheap - ideal for development and testing"
+
+# =====================================
 # MONITORING & LOGGING
 # =====================================
 monitoring:
   langsmith:
     api_key: ${LANGCHAIN_API_KEY}
-    project: ${PROJECT_NAME:-restaurant_research}
-    tracing: ${ENABLE_LANGCHAIN_TRACING:-false}
+    project: ${PROJECT_NAME}
+    tracing: ${LANGCHAIN_TRACING_V2}
 
 # =====================================
-# STORAGE
+# WORKFLOW CONFIGURATION
 # =====================================
-storage:
-  pinecone:
-    api_key: ${PINECONE_API_KEY}
-    collection_name: "restaurant_research_data"
-  aws:
-    region: ${AWS_REGION:-ap-south-1}
-    s3_bucket: ${S3_BUCKET}
+workflow:
+  approval_mode: manual  # Options: auto(Production), manual(Demo), always_approve(Testing)
+
+      # Overwrite from CLI:
+        # python -m src.workflow.research_orchestrator --approval auto
+        # python -m src.workflow.research_orchestrator --approval manual
+        # python -m src.workflow.research_orchestrator --approval always_approve
+# -----------------------------------------------------------------------------------------------------------
+
+# =====================================
+# RAG CONFIGURATION STARTS HERE
+# =====================================
+
+# =====================================
+# RAG COMPLIANCE CONFIGURATION
+# =====================================
+rag_compliance:
+  max_chunks: 8                   # Maximum chunks for compliance summary
+  min_score_threshold: 0.4         # Minimum score to include chunk
+  max_chunk_text_length: 400       # Max characters per chunk
+  sort_by_score: true              # Sort by relevance
+
+
+# =====================================
+# RAG: PREPROCESSING / INGESTION
+# =====================================
+rag_preprocessing:
+  lowercase: true
+  strip_whitespace: true
+  normalize_spaces: true
+  remove_special_chars: false
+  remove_numeric: false
+
+  supported_exts:
+    - ".pdf"
+    - ".docx"
+    - ".txt"
+
+  loader_map:
+    .pdf: langchain_community.document_loaders.PyPDFLoader
+    .docx: langchain_community.document_loaders.Docx2txtLoader
+    .txt: langchain_community.document_loaders.TextLoader
+
+# =====================================
+# RAG: TEXT SPLITTING STRATEGIES
+# =====================================
+rag_splitting:
+  default_strategy: recursive_character
+
+  # ==========================================
+  # PYTHON-PRACTICAL MARKDOWN SPLITTERS
+  # ==========================================
+
+  markdown_language_splitter:
+    import_path: langchain_text_splitters.RecursiveCharacterTextSplitter
+    chunk_size: 512
+    chunk_overlap: 100
+    separators: ["\n#{1,6} ", "\n```\n", "\n\\*\\*\\*\n", "\n---\n", "\n___\n", "\n\n", "\n", " ", ""]
+    is_separator_regex: true
+    description: "LangChain's language-aware MARKDOWN splitter - respects headers, lists, sections [citation:7]"
+
+  markdown_text_splitter:
+    import_path: langchain_text_splitters.MarkdownTextSplitter
+    chunk_size: 512
+    chunk_overlap: 50
+    separators: ["\n#{1,6} ", "\n```\n", "\n\\*\\*\\*\n", "\n---\n", "\n___\n", "\n\n", "\n", " ", ""]
+    is_separator_regex: true
+    description: "MarkdownTextSplitter - splits along markdown headings and code blocks [citation:3]"
+
+  # ==========================================
+  # SIMPLE HEADER-BASED SPLITTERS
+  # ==========================================
+
+  markdown_header:
+    import_path: langchain_text_splitters.MarkdownHeaderTextSplitter
+    headers_to_split_on:
+      - ["#", "h1"]
+      - ["##", "h2"]
+      - ["###", "h3"]
+      - ["####", "h4"]
+    strip_headers: false
+    description: "Splits at markdown headings - NO size control. Use as pipeline with recursive"
+
+  # ==========================================
+  # SIZE-CONTROL SPLITTERS (use after header split)
+  # ==========================================
+
+  recursive_character:
+    import_path: langchain_text_splitters.RecursiveCharacterTextSplitter
+    chunk_size: 512
+    chunk_overlap: 50
+    separators: ["\n\n", "\n", ". ", " ", ""]
+    description: "Standard recursive splitter - use after header split for size control"
+
+# =====================================
+# RAG: EMBEDDING MODELS
+# =====================================
+rag_embeddings:
+  default: openai
+  
+  huggingface:
+    model_name: sentence-transformers/all-MiniLM-L6-v2
+    dimensions: 384
+    import_path: langchain_huggingface.HuggingFaceEmbeddings
+    api_key: ${HUGGINGFACEHUB_API_TOKEN}
+
+  openai:
+    model_name: text-embedding-3-small
+    dimensions: 1536
+    import_path: langchain_openai.OpenAIEmbeddings
+    api_key: ${OPENAI_API_KEY}
+
+  google:
+    model_name: models/embedding-001
+    dimensions: 768
+    import_path: langchain_google_genai.GoogleGenerativeAIEmbeddings
+    api_key: ${GOOGLE_API_KEY}
+
+# =====================================
+# RAG: VECTOR STORES
+# =====================================
+rag_vectorstores:
+  default: qdrant
+  
+  qdrant:
+    import_path: langchain_qdrant.QdrantVectorStore
+    url: ${QDRANT_URL}
+    api_key: ${QDRANT_API_KEY}
+    collection_name: restaurant_compliance-rag
+  
+  faiss:
+    import_path: langchain_community.vectorstores.FAISS
+    persist_directory: data/faiss_store
+  
+  chroma:
+    import_path: langchain_community.vectorstores.Chroma
+    persist_directory: data/chroma_store
+
+# =====================================
+# RAG: RETRIEVAL CONFIGURATION
+# =====================================
+rag_retrieval:
+  top_k: 5
+  score_threshold: 0.0
+  jurisdiction_priority: false
+
+# =====================================
+# RAG: DOCUMENT SOURCES
+# =====================================
+rag_documents:
+  data_path: data/raw
+  supported_states:
+    - Maharashtra
+    - Karnataka
+    - Delhi
+    - Tamil Nadu
+    - Gujarat
+    - West Bengal
+    - Telangana
+
+
+# =====================================
+# RAG: ERROR HANDLING & RETRIES
+# =====================================
+rag_retries:
+  max_attempts: 3
+  backoff_factor: 2
+
+# =====================================
+# RAG: MASTER SWITCH & SELECTIONS
+# =====================================
+rag:
+  enabled: true
+  
+  # Which components to use (references above sections)
+  splitting_strategy: recursive_character
+  vectorstore: qdrant
+  embedding_model: openai
+  
+  # Logging
+  log_retrieval: true
+  log_embeddings: false
+
+# -----------------------------------------------------------------------------------------------------------
+
+# =====================================
+# EVALUATION
+# =====================================
+evaluation:
+
+  enabled: true
+
+  evaluators:
+
+    workflow:
+      enabled: true
+      provider: langsmith
+      import_path: src.evaluation.evaluators.workflow_evaluator.WorkflowEvaluator
+      thresholds:
+        execution_time_seconds: 10
+        llm_calls: 6
+        token_usage: 15000
+
+    report_quality:
+      enabled: true
+      provider: langsmith
+      import_path: src.evaluation.evaluators.report_quality_evaluator.ReportQualityEvaluator
+
+      criteria:
+        - completeness
+        - structure
+        - evidence
+        - recommendations
+        - readability
+
+    hallucination:
+      enabled: false
+      provider: langsmith
+      import_path: src.evaluation.evaluators.hallucination_evaluator.HallucinationEvaluator
+
+      threshold: low
+
+    rag:
+      enabled: false
+      provider: ragas
+      import_path: src.evaluation.evaluators.rag_evaluator.RagEvaluator
+
+      metrics:
+        - context_precision
+        - context_recall
+        - faithfulness
+
+  experiments:
+    enabled: false
+    provider: langsmith
