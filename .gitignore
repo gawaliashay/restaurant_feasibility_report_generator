@@ -1,180 +1,126 @@
-# ------------------------------
-# CORE PYTHON
-# ------------------------------
-__pycache__/
+# =====================================
+
+# PYTHON
+
+# =====================================
+
+**pycache**/
 *.py[cod]
 *.pyo
 *.pyd
-*.so
-*.dll
-*.dylib
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
 
-# ------------------------------
+# =====================================
+
 # VIRTUAL ENVIRONMENTS
-# ------------------------------
-env/
-venv/
+
+# =====================================
+
 .venv/
-ENV/
-env.bak/
-venv.bak/
+venv/
+env/
 
-# ------------------------------
-# JUPYTER / EXPERIMENTS
-# ------------------------------
-.ipynb_checkpoints/
-*.ipynb~
-profile_default/
-.ipython/
+# =====================================
 
-# ------------------------------
-# LOGS / TEMP / CACHE
-# ------------------------------
-*.log
-*.out
-*.tmp
-*.temp
-*.bak
-*.swp
-*.swo
-.DS_Store
-Thumbs.db
-.cache/
-.mypy_cache/
-.pytest_cache/
-__pypackages__/
-__pycache__/
-coverage.xml
-htmlcov/
-.tox/
-.nox/
-.coverage
-coverage/
-nosetests.xml
+# ENVIRONMENT VARIABLES & SECRETS
 
-# ------------------------------
-# DATA / MODELS / ARTIFACTS
-# ------------------------------
-data/
-datasets/
-models/
-checkpoints/
-artifacts/
-outputs/
-*.pt
-*.pth
-*.ckpt
-*.bin
-*.h5
-*.tflite
-*.onnx
-*.npy
-*.npz
-*.pkl
-*.joblib
-*.model
+# =====================================
 
-# ------------------------------
-# AGENTIC FRAMEWORK ARTIFACTS
-# ------------------------------
-.lc_cache/
-.llama_index_cache/
-index_store/
-vector_store/
-agent_memory/
-session_state/
-tool_cache/
-planner_cache/
-runtime_graphs/
-execution_traces/
-agent_logs/
-
-# ------------------------------
-# CONFIG / CREDENTIALS / SECRETS
-# ------------------------------
 .env
 .env.*
-*.pem
-*.key
-*.crt
-*.token
-*.secrets
-credentials.json
-config.json
-secrets.yaml
-auth.json
-firebase.json
+!.env.example
 
-# ------------------------------
-# EDITOR / IDE / PROJECT FILES
-# ------------------------------
+# =====================================
+
+# LOGS
+
+# =====================================
+
+logs/
+*.log
+
+# =====================================
+
+# TESTING & COVERAGE
+
+# =====================================
+
+.pytest_cache/
+.mypy_cache/
+.coverage
+coverage/
+htmlcov/
+
+# =====================================
+
+# IDE
+
+# =====================================
+
 .vscode/
 .idea/
-.spyproject/
-.ropeproject/
-.history/
-*.sublime-workspace
-*.sublime-project
 
-# ------------------------------
-# CONTAINER / INFRASTRUCTURE
-# ------------------------------
+# =====================================
+
+# OS FILES
+
+# =====================================
+
+.DS_Store
+Thumbs.db
+
+# =====================================
+
+# GENERATED REPORTS
+
+# =====================================
+
+reports/
+
+# =====================================
+
+# RAG GENERATED ARTIFACTS
+
+# =====================================
+
+data/processed/
+
+# =====================================
+
+# VECTOR STORES
+
+# =====================================
+
+vectorstore/
+data/faiss_store/
+data/chroma_store/
+
+# =====================================
+
+# EXPERIMENT TRACKING
+
+# =====================================
+
+mlruns/
+wandb/
+
+# =====================================
+
+# DATABASES
+
+# =====================================
+
 *.db
 *.sqlite
 *.sqlite3
-docker-compose.override.yml
-.env.docker
-__container_logs__/
-logs/
-terraform.tfstate
-terraform.tfstate.backup
-*.tfvars
-*.tfvars.json
 
-# ------------------------------
-# CLOUD / RUNTIME / SERVING
-# ------------------------------
-mlruns/
-wandb/
-ray_results/
-tensorboard/
-event*
-lightning_logs/
-hydra/
-outputs/
-experiments/
+# =====================================
 
-# ------------------------------
-# PACKAGE MANAGEMENT
-# ------------------------------
-pip-wheel-metadata/
-pip-log.txt
-Pipfile.lock
-Pipfile
-requirements.lock
-site-packages/
+# TEMP FILES
 
-# ------------------------------
-# MISC
-# ------------------------------
+# =====================================
+
 tmp/
 temp/
-test_output/
-__archive__/
-scratch/
+
+
+src/evaluation/

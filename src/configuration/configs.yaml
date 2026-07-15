@@ -35,80 +35,6 @@ export:
   formats: ["md", "json"]
   timestamp_format: "%Y%m%d_%H%M%S"
 
-# =====================================
-# ANALYSIS CONFIGURATION
-# =====================================
-research:
-
-  max_parallel_sections: 4
-  enable_data_compression: true
-  max_key_insights: 5
-  max_compressed_items: 10
-
-  sections:
-
-    market_analysis:
-      title: Market Analysis
-      description: Analyze customer demand and market trends.
-      prompt: market_analysis
-      execution_type: parallel
-      tools:
-        - google_trends
-        - tavily_search
-      dependencies: []
-
-    competitive_analysis:
-      title: Competitive Analysis
-      description: Analyze nearby competitors and market positioning.
-      prompt: competitive_analysis
-      execution_type: parallel
-      tools:
-        - google_maps
-        - tavily_search
-      dependencies: []
-
-    financial_analysis:
-      title: Financial Analysis
-      description: Assess investment feasibility.
-      prompt: financial_analysis
-      execution_type: parallel
-      tools:
-        - tavily_search
-      dependencies: []
-
-    compliance_requirements:
-      title: Compliance Requirements
-      description: Research licenses and regulations.
-      prompt: compliance_requirements
-      execution_type: parallel
-      tools:
-        - rag
-      dependencies: []
-
-    risk_assessment:
-      title: Risk Assessment
-      description: Assess business risks using previous findings.
-      prompt: risk_assessment
-      execution_type: sequential
-      tools: []
-      dependencies:
-        - market_analysis
-        - competitive_analysis
-        - financial_analysis
-        - compliance_requirements
-
-    strategic_recommendations:
-      title: Strategic Recommendations
-      description: Generate actionable business recommendations.
-      prompt: strategic_recommendations
-      execution_type: sequential
-      tools: []
-      dependencies:
-        - market_analysis
-        - competitive_analysis
-        - financial_analysis
-        - compliance_requirements
-        - risk_assessment
 
 # =====================================
 # BUSINESS CASE CONFIGURATION
@@ -127,14 +53,97 @@ business_case:
     special_note: "momo demand, spending power, competition density"
 
 # =====================================
+# ANALYSIS CONFIGURATION
+# =====================================
+research:
+  sections:
+    market_analysis:
+      enabled: true
+      title: Market Analysis
+      prompt: market_analysis
+      tools:
+        - google_trends
+        - tavily_search
+      dependencies: []
+
+    competitive_analysis:
+      enabled: true
+      title: Competitive Analysis
+      prompt: competitive_analysis
+      tools:
+        - google_maps
+        - tavily_search
+      dependencies: []
+
+    location_analysis:
+      enabled: true
+      title: Location Analysis
+      prompt: location_analysis
+      tools:
+        - google_maps
+        - tavily_search
+      dependencies: []
+
+    customer_demographics:
+      enabled: true
+      title: Customer Demographics
+      prompt: customer_demographics
+      tools:
+        - tavily_search
+      dependencies: []
+
+    compliance_requirements:
+      enabled: true
+      title: Compliance Requirements
+      prompt: compliance_requirements
+      tools:
+        - rag
+      dependencies: []
+
+    risk_assessment:
+      enabled: true
+      title: Risk Assessment
+      prompt: risk_assessment
+      tools: []
+      dependencies:
+        - market_analysis
+        - competitive_analysis
+        - location_analysis
+        - customer_demographics
+        - compliance_requirements
+
+    strategic_recommendations:
+      enabled: true
+      title: Strategic Recommendations
+      prompt: strategic_recommendations
+      tools: []
+      dependencies:
+        - risk_assessment
+
+
+# =====================================
 # TOOL CONFIGURATION
 # =====================================
 tools:
+
+  rag:
+    name: "Compliance RAG"
+    description: "Retrieve restaurant compliance regulations from the knowledge base."
+    function: "use_rag"
+    max_results: 8
+    parameters:
+      search_query:
+        template:
+          - "{restaurant_concept} regulations in {state}"
+          - "restaurant licenses in {state}"
+          - "food safety compliance in {state}"
+        required: true
+
   tavily_search:
     name: "Tavily Search"
     description: "Web search for local area demographics and market trends"
     function: "use_tavily_search"
-    tavily_max_results: 10
+    max_results: 15
     parameters:
       search_query:
         template:
@@ -151,6 +160,7 @@ tools:
     name: "Google Trends" 
     description: "Trend analysis for restaurant concept popularity"
     function: "use_google_trends"
+    max_points: 20
     parameters:
       trend_query:
         template: "{restaurant_concept}"
@@ -160,6 +170,7 @@ tools:
     name: "Google Maps"
     description: "City-level competition analysis and business density"
     function: "use_google_maps"
+    max_results: 15
     parameters:
       location:
         template: "{city}, {state}, India"
@@ -168,14 +179,13 @@ tools:
         template: "{restaurant_concept} in {local_area}, {city}" 
         required: true
 
-
 # =====================================
 # DEFAULTS
 # =====================================
 defaults:
   primary_llm: groq
   fast_llm: groq
-  creative_llm: openai
+  creative_llm: groq
   analysis_llm: groq
 
 # =====================================
@@ -216,34 +226,31 @@ reporting:
 # mode: "quality"   → Maximum detail, higher cost, for demos/interviews
 # mode: "fast"      → Faster, cheaper, for development/testing
 report_quality:
-  mode: "quality"  # Options: "balanced", "quality", "fast"
+  mode: "balanced"
   
-  # Settings used when mode: "quality" (Best quality, higher cost)
-  quality:
-    max_evidence_chars_per_section: 4000
-    max_chars_per_rag_chunk: 1000
-    max_rag_chunks_per_section: 10
-    max_summary_chars_for_sections: 800
-    max_llm_output_tokens: 4096
-    description: "Maximum detail - best for demos and client presentations"
-
-  # Settings used when mode: "balanced" (Default, good balance)
-  balanced:
-    max_evidence_chars_per_section: 2000
-    max_chars_per_rag_chunk: 600
-    max_rag_chunks_per_section: 8
-    max_summary_chars_for_sections: 500
-    max_llm_output_tokens: 2048
-    description: "Good quality with reasonable cost"
-
-  # Settings used when mode: "fast" (Faster, cheaper)
   fast:
     max_evidence_chars_per_section: 1000
+    max_tool_results_per_section: 10
     max_chars_per_rag_chunk: 300
     max_rag_chunks_per_section: 5
     max_summary_chars_for_sections: 300
     max_llm_output_tokens: 1024
-    description: "Fast and cheap - ideal for development and testing"
+
+  balanced:
+    max_evidence_chars_per_section: 2000
+    max_tool_results_per_section: 15
+    max_chars_per_rag_chunk: 600
+    max_rag_chunks_per_section: 8
+    max_summary_chars_for_sections: 500
+    max_llm_output_tokens: 2048
+
+  quality:
+    max_evidence_chars_per_section: 4000
+    max_tool_results_per_section: 20
+    max_chars_per_rag_chunk: 1000
+    max_rag_chunks_per_section: 10
+    max_summary_chars_for_sections: 800
+    max_llm_output_tokens: 4096
 
 # =====================================
 # MONITORING & LOGGING

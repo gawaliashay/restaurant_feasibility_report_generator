@@ -2,7 +2,7 @@
 
 import yaml
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from langchain_core.prompts import ChatPromptTemplate
 from src.logging_exception.logging.logger import logger
 from src.logging_exception.exception.custom_exception import CustomException
@@ -30,7 +30,7 @@ class PromptsLoader:
             logger.error(f"Failed to load prompts from {self.path}: {e}")
             raise CustomException(f"Failed to load prompts from {self.path}", e)
 
-    def get_prompt(self, section: str, name: str, default: str = None) -> str:
+    def get_prompt(self, section: str, name: str, default: Optional[str] = None) -> str:
         """Return prompt template string for given section and name."""
         try:
             prompt_text = self.prompts.get(section, {}).get(name)
@@ -46,7 +46,7 @@ class PromptsLoader:
                 return default
             raise
 
-    def get_chat_prompt(self, section: str, name: str, default: str = None) -> ChatPromptTemplate:
+    def get_chat_prompt(self, section: str, name: str, default: Optional[str] = None) -> ChatPromptTemplate:
         """Return a ChatPromptTemplate for given section and name."""
         prompt_text = self.get_prompt(section, name, default)
         return ChatPromptTemplate.from_template(prompt_text)

@@ -10,7 +10,7 @@ import os
 from datetime import datetime
 
 from src.workflow.research_orchestrator import RestaurantResearchSystem
-from src.graph_states.states import ResearchState
+from graph_states.workflow_states import WorkflowState
 
 app = FastAPI(
     title="Restaurant Market Research API",
@@ -195,7 +195,7 @@ async def execute_research(report_id: str, request: ResearchRequest):
         system = RestaurantResearchSystem()
         
         # Create research state
-        research_state = ResearchState(
+        research_state = WorkflowState(
             restaurant_concept=request.restaurant_concept,
             target_location=request.target_location,
             investment=request.investment,

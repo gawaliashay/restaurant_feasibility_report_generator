@@ -1,27 +1,65 @@
+# =====================================
+# CORE LANGCHAIN
+# =====================================
 langchain
-langchain_community
+langchain-core
+langchain-community
+langchain-text-splitters
+
+# =====================================
+# LLM PROVIDERS
+# =====================================
 langchain-openai
 langchain-groq
 langchain-anthropic
-langchain_huggingface
+langchain-mistralai
+langchain-google-genai
+langchain-huggingface
+
+# =====================================
+# LANGGRAPH
+# =====================================
 langgraph
 langgraph-checkpoint-sqlite
 
-pydantic
-python-dotenv
-structlog
+# =====================================
+# VECTOR DATABASE & RAG
+# =====================================
+qdrant-client
+langchain-qdrant
+
+# chromadb          # when needed
+# faiss-cpu         # when needed
+
+# =====================================
+# DOCUMENT PARSING (ETL Pipeline)
+# =====================================
+docling
+pdfplumber
+pypdf
+pymupdf
+pdf2image
+easyocr
+
+# =====================================
+# WEB SEARCH & API
+# =====================================
+langchain-tavily
+google-search-results
 pytrends
 requests
 
-langchain-tavily
-google-search-results
-
-
-# api
+# =====================================
+# API FRAMEWORK
+# =====================================
 fastapi
 uvicorn
 python-multipart
+aiofiles
+
+# =====================================
+# UTILITIES
+# =====================================
 pydantic
 python-dotenv
-aiofiles
-uvicorn
+structlog

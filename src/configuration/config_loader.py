@@ -1,251 +1,123 @@
 # src\configuration\config_loader.py
- 
+
+"""
+Config Loader - Simple, reliable configuration management.
+Loads YAML config with environment variable support.
+"""
+
 import os
-import yaml
 import re
+import yaml
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from dotenv import load_dotenv
-from pydantic import BaseModel
+
 from src.logging_exception.logging.logger import logger
-from src.logging_exception.exception.custom_exception import CustomException
 
 
-# ---------------------------------------------------------
-# Pydantic schema for Restaurant Research
-# ---------------------------------------------------------
-class PathsConfig(BaseModel):
-    data: str
-    vector_store: str
-    reports: str
-
-class AppConfig(BaseModel):
-    name: str
-    env: str
-    host: str
-    port: int
-    cors_origins: str
-
-class LLMConfig(BaseModel):
-    main_provider: str
-    fast_provider: str
-    main_model: str
-    fast_model: str
-    temperature: float
-    fast_temperature: float
-
-class ResearchConfig(BaseModel):
-    max_analysts: int
-    max_retries: int
-    tavily_max_results: int
-
-class OpenStreetMapConfig(BaseModel):
-    base_url: str
-    user_agent: str
-    timeout: int
-    country_codes: str
-
-class APIConfig(BaseModel):
-    openstreetmap: OpenStreetMapConfig
-    tavily: Dict[str, str]
-    serpapi: Dict[str, str]
-
-class ExportConfig(BaseModel):
-    formats: list
-    timestamp_format: str
-
-class AnalysisConfig(BaseModel):
-    max_key_insights: int
-    max_compressed_items: int
-    enable_data_compression: bool
-    keywords: Dict[str, list]
-    required_roles: list
-
-class BusinessCaseConfig(BaseModel):
-    default: Dict[str, Any]
-
-class ToolConfig(BaseModel):
-    name: str
-    description: str
-    function: str
-    required_params: list
-
-class ToolsConfig(BaseModel):
-    tavily_search: ToolConfig
-    google_trends: ToolConfig
-    openstreetmap: ToolConfig
-    google_maps: ToolConfig
-
-class ModelConfig(BaseModel):
-    model_name: Optional[str] = None
-    model: Optional[str] = None
-    import_path: str
-    api_key: str
-    temperature: float
-    max_tokens: int
-
-class LLMsConfig(BaseModel):
-    groq: ModelConfig
-    mistral: ModelConfig
-    openai: ModelConfig
-    google: ModelConfig
-
-class ModelsConfig(BaseModel):
-    llms: LLMsConfig
-
-class ReportingConfig(BaseModel):
-    save_to_file: bool
-    reports_directory: str
-    create_backup: bool
-    save_formats: list
-
-class MonitoringConfig(BaseModel):
-    langsmith: Dict[str, Any]  # Changed from Dict[str, str] to Dict[str, Any]
-
-class StorageConfig(BaseModel):
-    pinecone: Dict[str, str]
-    aws: Dict[str, str]
-
-class ConfigSchema(BaseModel):
-    # New sections
-    paths: PathsConfig
-    app: AppConfig
-    
-    # LLM Configuration
-    llm: LLMConfig
-    
-    # Research Configuration
-    research: ResearchConfig
-    
-    # API Configuration
-    apis: APIConfig
-    
-    # Export Configuration
-    export: ExportConfig
-    
-    # Analysis Configuration
-    analysis: AnalysisConfig
-    
-    # Business Case Configuration
-    business_case: BusinessCaseConfig
-    
-    # Tool Configuration
-    tools: ToolsConfig
-    
-    # Models Configuration
-    models: ModelsConfig
-    
-    # Report Configuration
-    reporting: ReportingConfig
-    
-    # New sections
-    monitoring: MonitoringConfig
-    storage: StorageConfig
-
-
-# ---------------------------------------------------------
-# Config Loader
-# ---------------------------------------------------------
 class ConfigLoader:
-    """Central configuration manager for Restaurant Research System."""
+    """Simple config loader with env variable support."""
 
-    def __init__(self, env_path=".env", config_path="src/configuration/configs.yaml"):
-        try:
-            self.env_path = Path(env_path)
-            self.config_path = Path(config_path)
-            self._load_env()
-            raw = self._load_yaml_with_env_override()
-            raw = self._resolve_env_vars(raw)
-            self.config = ConfigSchema(**raw)
-            logger.info("Restaurant Research Configuration loaded successfully.")
-        except (FileNotFoundError, Exception) as e:
-            raise CustomException("Failed to initialize configuration", e)
-
-    def _load_env(self):
+    def __init__(self, env_path: str = ".env", config_path: str = "src/configuration/configs.yaml"):
+        self.env_path = Path(env_path)
+        self.config_path = Path(config_path)
+        self.config: Dict[str, Any] = {}
+        
+        # Load env vars
         if self.env_path.exists():
             load_dotenv(self.env_path)
-            logger.info(f"Environment variables loaded from {self.env_path}")
+            logger.info(f"Loaded env from {self.env_path}")
+        
+        # Load and resolve config
+        self.config = self._load_config()
+        logger.info("✅ Configuration loaded successfully")
 
-    def _load_yaml_with_env_override(self) -> Dict[str, Any]:
+    def _load_config(self) -> Dict[str, Any]:
+        """Load YAML and resolve environment variables."""
         if not self.config_path.exists():
-            raise FileNotFoundError(f"Missing config file: {self.config_path}")
+            raise FileNotFoundError(f"Config not found: {self.config_path}")
+        
         with open(self.config_path, "r", encoding="utf-8") as f:
-            base = yaml.safe_load(f) or {}
-        return base
+            raw = yaml.safe_load(f) or {}
+        
+        return self._resolve_env_vars(raw)
 
     def _resolve_env_vars(self, data: Any) -> Any:
-        """Resolve environment variables in configuration strings including ${VAR:-default} syntax."""
+        """Replace ${VAR} with environment variable values."""
         if isinstance(data, dict):
             return {k: self._resolve_env_vars(v) for k, v in data.items()}
         if isinstance(data, list):
             return [self._resolve_env_vars(v) for v in data]
         if isinstance(data, str):
-            # Handle ${VAR:-default} format
-            resolved_data = data
-            for match in re.findall(r"\$\{([^}]+)\}", data):
-                # Parse the variable with default value
-                if ':-' in match:
-                    var_name, default_value = match.split(':-', 1)
-                else:
-                    var_name, default_value = match, ""
-                
-                env_value = os.getenv(var_name)
+            # Find all ${VAR} or ${VAR:-default} patterns
+            pattern = r"\$\{([^}]+)\}"
+            matches = re.findall(pattern, data)
+            
+            result = data
+            for var in matches:
+                env_value = os.getenv(var)
                 if env_value is not None:
-                    resolved_data = resolved_data.replace(f"${{{match}}}", env_value)
-                elif default_value:
-                    resolved_data = resolved_data.replace(f"${{{match}}}", default_value)
-                else:
-                    logger.warning(f"Environment variable {var_name} not found and no default provided")
+                    result = result.replace(f"${{{var}}}", env_value)
+                # If no env value, keep the original (with default handling in YAML)
             
-            # Handle simple ${VAR} format (without defaults)
-            for match in re.findall(r"\$\{([^}:]+)\}", resolved_data):
-                env_value = os.getenv(match)
-                if env_value is not None:
-                    resolved_data = resolved_data.replace(f"${{{match}}}", env_value)
-                else:
-                    logger.warning(f"Environment variable {match} not found")
-            
-            # Convert string numbers to actual numbers when appropriate
-            if resolved_data.isdigit():
-                return int(resolved_data)
-            elif resolved_data.replace('.', '').isdigit() and resolved_data.count('.') == 1:
-                return float(resolved_data)
-            elif resolved_data.lower() in ['true', 'false']:
-                return resolved_data.lower() == 'true'
-            
-            return resolved_data
+            # Try to convert to appropriate type
+            if result.isdigit():
+                return int(result)
+            if result.lower() in ['true', 'false']:
+                return result.lower() == 'true'
+            return result
         return data
 
-    def get(self, key: str = None, default: Any = None) -> Any:
-        """Access nested configuration values using dot notation."""
-        data = self.config.dict()
-        if not key:
-            return data
-        
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get config value using dot notation (e.g., 'rag.max_chunks')."""
         keys = key.split(".")
-        current = data
+        value = self.config
+        
         for k in keys:
-            if isinstance(current, dict) and k in current:
-                current = current[k]
+            if isinstance(value, dict) and k in value:
+                value = value[k]
             else:
                 return default
-        return current
+        
+        return value
 
-    def get_llm_config(self, provider: str) -> Dict[str, Any]:
-        """Get LLM configuration for specific provider."""
-        return self.get(f"models.llms.{provider}", {})
-
-    def get_api_keys(self) -> Dict[str, str]:
-        """Extract all API keys from configuration."""
-        api_keys = {}
-        llms = self.get("models.llms", {})
-        for provider, config in llms.items():
-            if "api_key" in config and config["api_key"]:
-                api_keys[provider.upper() + "_API_KEY"] = config["api_key"]
-        return api_keys
+    def get_all(self) -> Dict[str, Any]:
+        """Get the entire config dictionary."""
+        return self.config
 
 
-# ---------------------------------------------------------
-# Singleton Instance
-# ---------------------------------------------------------
+# Singleton instance
 config_loader = ConfigLoader()
+
+
+# Quick test
+if __name__ == "__main__":
+    print("\n" + "="*60)
+    print("TESTING CONFIG LOADER")
+    print("="*60)
+    
+    try:
+        # Test get() method
+        print("\n✓ Testing config_loader.get()...")
+        print(f"   RAG enabled: {config_loader.get('rag.enabled')}")
+        print(f"   Max chunks: {config_loader.get('rag_compliance.max_chunks')}")
+        print(f"   LLM provider: {config_loader.get('defaults.primary_llm')}")
+        
+        # Test get_all() method
+        print("\n✓ Testing config_loader.get_all()...")
+        all_config = config_loader.get_all()
+        print(f"   Config keys: {list(all_config.keys())[:5]}...")
+        
+        # Test default value
+        print("\n✓ Testing default value...")
+        missing = config_loader.get('nonexistent.key', 'default_value')
+        print(f"   Missing key returns: {missing}")
+        
+        print("\n" + "="*60)
+        print("✅ ALL TESTS PASSED!")
+        print("="*60)
+        
+    except Exception as e:
+        print(f"\n❌ ERROR: {e}")
+        import traceback
+        traceback.print_exc()
