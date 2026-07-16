@@ -4,8 +4,8 @@ from src.configuration.config_loader import config_loader
 from src.logging_exception.logging.logger import logger
 
 from src.evaluation.artifacts.evaluation_artifact import EvaluationArtifact
-from evaluation.evaluation_loader import evaluation_loader
-from evaluation.evaluation_result import EvaluationResult
+from src.evaluation.evaluation_loader import evaluation_loader
+from src.evaluation.evaluation_result import EvaluationResult
 
 
 class EvaluationManager:

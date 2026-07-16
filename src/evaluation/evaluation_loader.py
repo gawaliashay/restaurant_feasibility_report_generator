@@ -6,7 +6,7 @@ import importlib
 from src.configuration.config_loader import config_loader
 from src.logging_exception.exception.custom_exception import CustomException
 from src.logging_exception.logging.logger import logger
-from evaluation.base_evaluator import BaseEvaluator
+from src.evaluation.base_evaluator import BaseEvaluator
 
 
 class EvaluationLoader:

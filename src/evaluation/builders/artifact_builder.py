@@ -63,7 +63,7 @@ class ArtifactBuilder:
             local_area=workflow_state.get("local_area"),
             city=workflow_state.get("city"),
             state=workflow_state.get("state"),
-            pincode=workflow_state.get("pincode"),
+            pincode=str(workflow_state.get("pincode", "")),
         )
 
     # ------------------------------------------------------------------
