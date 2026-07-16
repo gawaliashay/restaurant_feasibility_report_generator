@@ -49,7 +49,6 @@ class ConfigLoader:
         if isinstance(data, list):
             return [self._resolve_env_vars(v) for v in data]
         if isinstance(data, str):
-            # Find all ${VAR} or ${VAR:-default} patterns
             pattern = r"\$\{([^}]+)\}"
             matches = re.findall(pattern, data)
             
@@ -58,13 +57,16 @@ class ConfigLoader:
                 env_value = os.getenv(var)
                 if env_value is not None:
                     result = result.replace(f"${{{var}}}", env_value)
-                # If no env value, keep the original (with default handling in YAML)
             
-            # Try to convert to appropriate type
-            if result.isdigit():
-                return int(result)
-            if result.lower() in ['true', 'false']:
-                return result.lower() == 'true'
+            # Only convert if the ORIGINAL string had ${...} and was replaced
+            # Otherwise, preserve the original type
+            if matches:
+                # This came from an env var, try to convert
+                if result.isdigit():
+                    return int(result)
+                if result.lower() in ['true', 'false']:
+                    return result.lower() == 'true'
+            
             return result
         return data
 
