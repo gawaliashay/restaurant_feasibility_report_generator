@@ -1,3 +1,5 @@
+# src\evaluation\artifacts\input_artifact.py
+
 from pydantic import BaseModel
 
 
@@ -12,3 +14,4 @@ class InputArtifact(BaseModel):
     city: str | None = None
     state: str | None = None
     pincode: str | None = None
+

@@ -1,3 +1,5 @@
+# src\evaluation\artifacts\rag_artifact.py
+
 from pydantic import BaseModel, Field
 
 
