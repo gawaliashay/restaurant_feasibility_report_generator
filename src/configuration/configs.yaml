@@ -462,10 +462,34 @@ evaluation:
       enabled: true
       provider: langsmith
       import_path: src.evaluation.evaluators.workflow_evaluator.WorkflowEvaluator
+
       thresholds:
         execution_time_seconds: 10
-        llm_calls: 6
-        token_usage: 15000
+        completed_nodes: 7
+        failed_nodes: 0
+
+    llm:
+      enabled: false
+      provider: langsmith
+      import_path: src.evaluation.evaluators.llm_evaluator.LLMEvaluator
+
+      thresholds:
+        max_calls: 10
+        max_total_tokens: 15000
+        max_prompt_tokens: 8000
+        max_completion_tokens: 7000
+        max_cost_usd: 0.20
+        max_latency_seconds: 60
+
+    tools:
+      enabled: false
+      provider: custom
+      import_path: src.evaluation.evaluators.tool_evaluator.ToolEvaluator
+
+      thresholds:
+        max_tool_latency_seconds: 5
+        max_failed_tools: 0
+        min_success_rate: 0.95
 
     report_quality:
       enabled: true
@@ -478,24 +502,3 @@ evaluation:
         - evidence
         - recommendations
         - readability
-
-    hallucination:
-      enabled: false
-      provider: langsmith
-      import_path: src.evaluation.evaluators.hallucination_evaluator.HallucinationEvaluator
-
-      threshold: low
-
-    rag:
-      enabled: false
-      provider: ragas
-      import_path: src.evaluation.evaluators.rag_evaluator.RagEvaluator
-
-      metrics:
-        - context_precision
-        - context_recall
-        - faithfulness
-
-  experiments:
-    enabled: false
-    provider: langsmith
