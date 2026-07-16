@@ -1,35 +1,25 @@
-# playground\test_evaluation.py
+# from src.workflow.research_orchestrator import RestaurantResearchOrchestrator
+from src.evaluation.evaluation_pipeline import evaluation_pipeline
+from src.graph_states.workflow_states import WorkflowState
 
 import asyncio
-
-from evaluation.evaluation_artifact import EvaluationArtifact, ReportContext, WorkflowContext
-from evaluation.evaluation_manager import EvaluationManager
 
 
 async def main():
 
-    context = EvaluationArtifact(
+    # orchestrator = RestaurantResearchOrchestrator()
 
-        workflow=WorkflowContext(
-            execution_time=18.4,
-            workflow_status="success",
-        ),
+    # state = orchestrator.run_pipeline()
+    # results = await evaluation_pipeline.evaluate(state)
 
-        report=ReportContext(
-            report="""
-            # Restaurant Market Report
+    state = WorkflowState()
+    results = await evaluation_pipeline.evaluate(state)
 
-            Pune has experienced significant growth in premium dining...
-            """
-        ),
-    )
-
-    manager = EvaluationManager()
-
-    results = await manager.evaluate(context)
+    print("\nEvaluation Results")
+    print("=" * 50)
 
     for result in results:
-        print(result.model_dump_json(indent=4))
+        print(result.model_dump())
 
 
 if __name__ == "__main__":
