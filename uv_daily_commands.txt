@@ -1,0 +1,92 @@
+# UV Daily Commands (Windows CMD)
+
+## Activate Environment
+
+```cmd
+.venv\Scripts\activate
+```
+
+## Deactivate
+
+```cmd
+deactivate
+```
+
+## Install Project Dependencies
+
+```cmd
+uv sync
+```
+
+## Add Package
+
+```cmd
+uv add <package>
+```
+
+Example:
+
+```cmd
+uv add langchain-openai
+```
+
+## Remove Package
+
+```cmd
+uv remove <package>
+```
+
+## Run Project
+
+```cmd
+uv run python pipeline.py
+```
+
+or (after activation)
+
+```cmd
+python pipeline.py
+```
+
+## Show Installed Packages
+
+```cmd
+uv pip list
+```
+
+## Show Dependency Tree
+
+```cmd
+uv tree
+```
+
+## Update Dependencies
+
+```cmd
+uv lock --upgrade
+uv sync
+```
+
+## Create Virtual Environment
+
+```cmd
+uv venv --python 3.13
+```
+
+## Install Python
+
+```cmd
+uv python install 3.13
+```
+
+## List Python Versions
+
+```cmd
+uv python list
+```
+
+## Check uv Version
+
+```cmd
+uv --version
+```

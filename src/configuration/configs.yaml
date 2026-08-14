@@ -1,44 +1,57 @@
 # src\configuration\configs.yaml
 
-# =====================================
+# ============================================================
 # PATHS & DIRECTORIES
-# =====================================
+# ============================================================
+
 paths:
   data: ${DATA_PATH}
   vector_store: ${VECTOR_STORE_PATH}
   reports: ${REPORTS_DIRECTORY}
   logs_dir: logs/
 
-# =====================================
-# APPLICATION CONFIGURATION
-# =====================================
+
+# ============================================================
+# APPLICATION
+# ============================================================
+
 app:
   name: ${PROJECT_NAME}
   env: ${ENV}
   host: ${HOST}
-  port: ${PORT}   
+  port: ${PORT}
   cors_origins: ${ALLOWED_ORIGINS}
 
-# =====================================
-# API CONFIGURATION
-# =====================================
+
+# ============================================================
+# API KEYS
+# ============================================================
+
 apis:
   tavily:
     api_key: ${TAVILY_API_KEY}
+
   serpapi:
     api_key: ${SERPAPI_API_KEY}
+    endpoint: ${SERPAPI_ENDPOINT}
+    timeout: ${SERPAPI_TIMEOUT}
 
-# =====================================
-# EXPORT CONFIGURATION
-# =====================================
+
+# ============================================================
+# EXPORT
+# ============================================================
+
 export:
-  formats: ["md", "json"]
+  formats:
+    - md
+    - json
   timestamp_format: "%Y%m%d_%H%M%S"
 
 
-# =====================================
-# BUSINESS CASE CONFIGURATION
-# =====================================
+# ============================================================
+# BUSINESS CASE - LOCAL DEVELOPMENT
+# ============================================================
+
 business_case:
   default:
     restaurant_concept: "momo Restaurant"
@@ -47,16 +60,21 @@ business_case:
       local_area: "Baner"
       city: "Pune"
       state: "Maharashtra"
+      country: "India"
       pincode: "411058"
     investment: "₹350,000"
     target_demographic: "Professionals 25-45, health-conscious"
     special_note: "momo demand, spending power, competition density"
 
-# =====================================
-# ANALYSIS CONFIGURATION
-# =====================================
+
+# ============================================================
+# RESEARCH
+# ============================================================
+
 research:
+
   sections:
+
     market_analysis:
       enabled: true
       title: Market Analysis
@@ -64,6 +82,14 @@ research:
       tools:
         - google_trends
         - tavily_search
+      queries:
+        google_trends:
+          - "momo"
+          - "momo restaurant"
+        tavily_search:
+          - "{restaurant_concept} market demand trends {city} India"
+          - "{restaurant_concept} consumer preferences dining trends {city} India"
+          - "restaurant food delivery market trends {city} India"
       dependencies: []
 
     competitive_analysis:
@@ -73,6 +99,12 @@ research:
       tools:
         - google_maps
         - tavily_search
+      queries:
+        google_maps:
+          - "{restaurant_concept} in {local_area}, {city}"
+        tavily_search:
+          - "{restaurant_concept} competitors {local_area} {city} pricing menu"
+          - "{restaurant_concept} reviews positioning {local_area} {city}"
       dependencies: []
 
     location_analysis:
@@ -82,6 +114,14 @@ research:
       tools:
         - google_maps
         - tavily_search
+      queries:
+        google_maps:
+          - "colleges offices shopping centers  in {local_area}, {city}"
+          - "Corporate companies commercial hubs in {local_area}, {city}"
+        tavily_search:
+          - "{local_area} {city} commercial residential development"
+          - "{local_area} {city} connectivity parking public transport"
+          - "{local_area} {city} footfall traffic"
       dependencies: []
 
     customer_demographics:
@@ -90,6 +130,11 @@ research:
       prompt: customer_demographics
       tools:
         - tavily_search
+      queries:
+        tavily_search:
+          - "{local_area} {city} population, income and demographics"
+          - "{local_area} {city} consumer spending dining habits"
+          - "{local_area} {city} food preferences restaurant trends"
       dependencies: []
 
     compliance_requirements:
@@ -98,6 +143,13 @@ research:
       prompt: compliance_requirements
       tools:
         - rag
+      queries:
+        rag:
+          - "FSSAI registration and license requirements for restaurants"
+          - "FSSAI food business operator obligations and penalties"
+          - "Maharashtra Shops and Establishments registration and working hours"
+          - "Maharashtra restaurant municipal trade license and Fire NOC"
+          - "restaurant eating house and music license requirements India"
       dependencies: []
 
     risk_assessment:
@@ -105,6 +157,7 @@ research:
       title: Risk Assessment
       prompt: risk_assessment
       tools: []
+      queries: {}
       dependencies:
         - market_analysis
         - competitive_analysis
@@ -117,80 +170,52 @@ research:
       title: Strategic Recommendations
       prompt: strategic_recommendations
       tools: []
+      queries: {}
       dependencies:
         - risk_assessment
 
 
-# =====================================
-# TOOL CONFIGURATION
-# =====================================
-tools:
+# ============================================================
+# RESEARCH LIMITS
+# ============================================================
 
-  rag:
-    name: "Compliance RAG"
-    description: "Retrieve restaurant compliance regulations from the knowledge base."
-    function: "use_rag"
-    max_results: 8
-    parameters:
-      search_query:
-        template:
-          - "{restaurant_concept} regulations in {state}"
-          - "restaurant licenses in {state}"
-          - "food safety compliance in {state}"
-        required: true
+research_limits:
+  max_evidence_chars: 3000
+  max_text_per_result: 500
+
+# ============================================================
+# TOOL CONFIGURATION
+# ============================================================
+
+tools:
+  google_maps:
+    query_parameter: map_query
+    location_parameter: location
+    location_template: "{city}, {state}, {country}"
+    engine: google_local
 
   tavily_search:
-    name: "Tavily Search"
-    description: "Web search for local area demographics and market trends"
-    function: "use_tavily_search"
-    max_results: 15
-    parameters:
-      search_query:
-        template:
-          - "{restaurant_concept} in {local_area} {city}"
-          - "customer demographics in {local_area} {city}"
-          - "food preferences in {local_area} {city}"
-          - "restaurant competition in {local_area} {city}"
-          - "footfall in {local_area} {city}"
-          - "commercial activity in {local_area} {city}"
-        required: true
-    
-    
-  google_trends:
-    name: "Google Trends" 
-    description: "Trend analysis for restaurant concept popularity"
-    function: "use_google_trends"
-    max_points: 20
-    parameters:
-      trend_query:
-        template: "{restaurant_concept}"
-        required: true
-    
-  google_maps:
-    name: "Google Maps"
-    description: "City-level competition analysis and business density"
-    function: "use_google_maps"
-    max_results: 15
-    parameters:
-      location:
-        template: "{city}, {state}, India"
-        required: true
-      map_query:
-        template: "{restaurant_concept} in {local_area}, {city}" 
-        required: true
+    query_parameter: search_query
+    max_results: 5
 
-# =====================================
-# DEFAULTS
-# =====================================
+  google_trends:
+    query_parameter: trend_query
+    engine: google_trends
+
+  rag:
+    query_parameter: search_query
+
+
+# ============================================================
+# LLM MODELS
+# ============================================================
+
 defaults:
   primary_llm: groq
   fast_llm: groq
   creative_llm: groq
   analysis_llm: groq
 
-# =====================================
-# MODELS
-# =====================================
 models:
   llms:
     groq:
@@ -198,177 +223,167 @@ models:
       import_path: langchain_groq.ChatGroq
       api_key: ${GROQ_API_KEY}
       temperature: 0.3
-      max_tokens: 4096
+      max_tokens: 2048
 
     openai:
       model_name: gpt-4o-mini
       import_path: langchain_openai.ChatOpenAI
       api_key: ${OPENAI_API_KEY}
       temperature: 0.3
-      max_tokens: 4096
+      max_tokens: 2048
 
-# =====================================
-# REPORT CONFIGURATION
-# =====================================
-# Add to configs.yaml under reporting section
+
+# ============================================================
+# REPORT SETTINGS
+# ============================================================
+
 reporting:
   save_to_file: true
   reports_directory: "reports"
   create_backup: true
-  save_formats: ["md", "json"]
+  save_formats:
+    - md
+    - json
+  max_concurrent_requests: 1
+  empty_evidence_message: "No evidence available."
+  
+  citation_fields:
+    - url
+    - source
+    - document_name
+    - title
+    - reference
+  
+  rate_limit_indicators:
+    - "rate limit"
+    - "too many requests"
+    - "429"
+    - "quota exceeded"
+  
+  retry:
+    max_retries: 3
+    backoff_seconds: 1.0
+    max_backoff_seconds: 30.0
+    retry_after_pattern: "retry-after:\\s*(\\d+)"
+    retry_after_buffer_seconds: 1.0
 
-# =====================================
-# REPORT QUALITY CONFIGURATION
-# =====================================
-# Controls how detailed/expensive the report generation is
-# 
-# mode: "balanced"  → Default, good quality, moderate cost
-# mode: "quality"   → Maximum detail, higher cost, for demos/interviews
-# mode: "fast"      → Faster, cheaper, for development/testing
+
+# ============================================================
+# REPORT QUALITY
+# ============================================================
+
 report_quality:
   mode: "balanced"
-  
+
   fast:
-    max_evidence_chars_per_section: 1000
+    max_evidence_chars_per_section: 2000
     max_tool_results_per_section: 10
     max_chars_per_rag_chunk: 300
-    max_rag_chunks_per_section: 5
-    max_summary_chars_for_sections: 300
+    max_rag_chunks_per_section: 4
+    max_summary_chars_for_sections: 500
     max_llm_output_tokens: 1024
+    max_citation_chars: 1500
+    max_evidence_chars_for_final_report: 6000
 
   balanced:
-    max_evidence_chars_per_section: 2000
-    max_tool_results_per_section: 15
-    max_chars_per_rag_chunk: 600
-    max_rag_chunks_per_section: 8
-    max_summary_chars_for_sections: 500
-    max_llm_output_tokens: 2048
+    max_evidence_chars_per_section: 3000
+    max_tool_results_per_section: 12
+    max_chars_per_rag_chunk: 400
+    max_rag_chunks_per_section: 5
+    max_summary_chars_for_sections: 600
+    max_llm_output_tokens: 1536
+    max_citation_chars: 2000
+    max_evidence_chars_for_final_report: 8000
 
   quality:
     max_evidence_chars_per_section: 4000
-    max_tool_results_per_section: 20
-    max_chars_per_rag_chunk: 1000
-    max_rag_chunks_per_section: 10
+    max_tool_results_per_section: 15
+    max_chars_per_rag_chunk: 500
+    max_rag_chunks_per_section: 4
     max_summary_chars_for_sections: 800
-    max_llm_output_tokens: 4096
+    max_llm_output_tokens: 2048
+    max_citation_chars: 3000
+    max_evidence_chars_for_final_report: 10000
 
-# =====================================
-# MONITORING & LOGGING
-# =====================================
+
+# ============================================================
+# MONITORING
+# ============================================================
+
 monitoring:
   langsmith:
     api_key: ${LANGCHAIN_API_KEY}
     project: ${PROJECT_NAME}
     tracing: ${LANGCHAIN_TRACING_V2}
 
-# =====================================
-# WORKFLOW CONFIGURATION
-# =====================================
+
+# ============================================================
+# WORKFLOW
+# ============================================================
+
 workflow:
-  approval_mode: manual  # Options: auto(Production), manual(Demo), always_approve(Testing)
-
-      # Overwrite from CLI:
-        # python -m src.workflow.research_orchestrator --approval auto
-        # python -m src.workflow.research_orchestrator --approval manual
-        # python -m src.workflow.research_orchestrator --approval always_approve
-# -----------------------------------------------------------------------------------------------------------
-
-# =====================================
-# RAG CONFIGURATION STARTS HERE
-# =====================================
-
-# =====================================
-# RAG COMPLIANCE CONFIGURATION
-# =====================================
-rag_compliance:
-  max_chunks: 8                   # Maximum chunks for compliance summary
-  min_score_threshold: 0.4         # Minimum score to include chunk
-  max_chunk_text_length: 400       # Max characters per chunk
-  sort_by_score: true              # Sort by relevance
+  approval_mode: manual
 
 
-# =====================================
-# RAG: PREPROCESSING / INGESTION
-# =====================================
-rag_preprocessing:
-  lowercase: true
-  strip_whitespace: true
-  normalize_spaces: true
-  remove_special_chars: false
-  remove_numeric: false
+# ============================================================
+# RAG: TEXT SPLITTING
+# ============================================================
 
-  supported_exts:
-    - ".pdf"
-    - ".docx"
-    - ".txt"
-
-  loader_map:
-    .pdf: langchain_community.document_loaders.PyPDFLoader
-    .docx: langchain_community.document_loaders.Docx2txtLoader
-    .txt: langchain_community.document_loaders.TextLoader
-
-# =====================================
-# RAG: TEXT SPLITTING STRATEGIES
-# =====================================
 rag_splitting:
   default_strategy: recursive_character
 
-  # ==========================================
-  # PYTHON-PRACTICAL MARKDOWN SPLITTERS
-  # ==========================================
+  recursive_character:
+    chunk_size: 1024
+    chunk_overlap: 100
+    separators:
+      - "\n\n"
+      - "\n"
+      - ". "
+      - " "
+      - ""
+    description: "Best for PDFs, plain text"
 
   markdown_language_splitter:
-    import_path: langchain_text_splitters.RecursiveCharacterTextSplitter
-    chunk_size: 512
+    chunk_size: 1024
     chunk_overlap: 100
-    separators: ["\n#{1,6} ", "\n```\n", "\n\\*\\*\\*\n", "\n---\n", "\n___\n", "\n\n", "\n", " ", ""]
+    separators:
+      - "\n#{1,6} "
+      - "\n```\n"
+      - "\n\\*\\*\\*\n"
+      - "\n---\n"
+      - "\n___\n"
+      - "\n\n"
+      - "\n"
+      - " "
+      - ""
     is_separator_regex: true
-    description: "LangChain's language-aware MARKDOWN splitter - respects headers, lists, sections [citation:7]"
+    description: "Best for websites, markdown"
 
-  markdown_text_splitter:
-    import_path: langchain_text_splitters.MarkdownTextSplitter
+  recursive_character_small:
     chunk_size: 512
     chunk_overlap: 50
-    separators: ["\n#{1,6} ", "\n```\n", "\n\\*\\*\\*\n", "\n---\n", "\n___\n", "\n\n", "\n", " ", ""]
-    is_separator_regex: true
-    description: "MarkdownTextSplitter - splits along markdown headings and code blocks [citation:3]"
+    separators:
+      - "\n\n"
+      - "\n"
+      - ". "
+      - " "
+      - ""
+    description: "Smaller chunks for precise retrieval"
 
-  # ==========================================
-  # SIMPLE HEADER-BASED SPLITTERS
-  # ==========================================
 
-  markdown_header:
-    import_path: langchain_text_splitters.MarkdownHeaderTextSplitter
-    headers_to_split_on:
-      - ["#", "h1"]
-      - ["##", "h2"]
-      - ["###", "h3"]
-      - ["####", "h4"]
-    strip_headers: false
-    description: "Splits at markdown headings - NO size control. Use as pipeline with recursive"
+# ============================================================
+# RAG: EMBEDDINGS
+# ============================================================
 
-  # ==========================================
-  # SIZE-CONTROL SPLITTERS (use after header split)
-  # ==========================================
-
-  recursive_character:
-    import_path: langchain_text_splitters.RecursiveCharacterTextSplitter
-    chunk_size: 512
-    chunk_overlap: 50
-    separators: ["\n\n", "\n", ". ", " ", ""]
-    description: "Standard recursive splitter - use after header split for size control"
-
-# =====================================
-# RAG: EMBEDDING MODELS
-# =====================================
 rag_embeddings:
   default: openai
-  
+
   huggingface:
     model_name: sentence-transformers/all-MiniLM-L6-v2
     dimensions: 384
     import_path: langchain_huggingface.HuggingFaceEmbeddings
-    api_key: ${HUGGINGFACEHUB_API_TOKEN}
+    # No api_key needed for local sentence-transformers models!
+  
 
   openai:
     model_name: text-embedding-3-small
@@ -382,87 +397,69 @@ rag_embeddings:
     import_path: langchain_google_genai.GoogleGenerativeAIEmbeddings
     api_key: ${GOOGLE_API_KEY}
 
-# =====================================
+
+# ============================================================
 # RAG: VECTOR STORES
-# =====================================
+# ============================================================
+
 rag_vectorstores:
   default: qdrant
-  
+
   qdrant:
-    import_path: langchain_qdrant.QdrantVectorStore
     url: ${QDRANT_URL}
     api_key: ${QDRANT_API_KEY}
     collection_name: restaurant_compliance-rag
-  
+
   faiss:
-    import_path: langchain_community.vectorstores.FAISS
     persist_directory: data/faiss_store
-  
+
   chroma:
-    import_path: langchain_community.vectorstores.Chroma
     persist_directory: data/chroma_store
 
-# =====================================
-# RAG: RETRIEVAL CONFIGURATION
-# =====================================
+
+# ============================================================
+# RAG: RETRIEVAL
+# ============================================================
+
 rag_retrieval:
-  top_k: 5
-  score_threshold: 0.0
-  jurisdiction_priority: false
-
-# =====================================
-# RAG: DOCUMENT SOURCES
-# =====================================
-rag_documents:
-  data_path: data/raw
-  supported_states:
-    - Maharashtra
-    - Karnataka
-    - Delhi
-    - Tamil Nadu
-    - Gujarat
-    - West Bengal
-    - Telangana
+  top_k: 4
+  score_threshold: 0.3
+  max_chars_per_chunk: 500
 
 
-# =====================================
-# RAG: ERROR HANDLING & RETRIES
-# =====================================
-rag_retries:
-  max_attempts: 3
-  backoff_factor: 2
+# ============================================================
+# RAG: DATA SOURCES
+# ============================================================
 
-# =====================================
-# RAG: MASTER SWITCH & SELECTIONS
-# =====================================
-rag:
-  enabled: true
-  
-  # Which components to use (references above sections)
-  splitting_strategy: recursive_character
-  vectorstore: qdrant
-  embedding_model: openai
-  
-  # Logging
-  log_retrieval: true
-  log_embeddings: false
+rag_sources:
+  local_pdfs:
+    - path: "data/raw/base_docs/Legal_&_Regulatory_Handbook_for_Restaurants_and_Cafés.pdf"
+      title: "Legal & Regulatory Handbook for Restaurants and Cafés"
+      description: "Comprehensive compliance guide for restaurants in India"
 
-# -----------------------------------------------------------------------------------------------------------
+  websites:
+    - url: "https://www.indiafilings.com/learn/maharashtra-shops-and-establishment-act"
+      title: "Maharashtra Shops and Establishment Act"
+      description: "Regulations for shops and establishments in Maharashtra"
 
-# =====================================
+  online_pdfs:
+    - url: "https://fssai.gov.in/docs/food-law/act-2006/Food_Safety_and_Standards_Act_2006.pdf"
+      title: "Food Safety and Standards Act, 2006"
+      description: "Primary food safety legislation for India"
+
+
+# ============================================================
 # EVALUATION
-# =====================================
-evaluation:
+# ============================================================
 
+evaluation:
   enabled: true
 
   evaluators:
-
     workflow:
       enabled: true
       provider: langsmith
       import_path: src.evaluation.evaluators.workflow_evaluator.WorkflowEvaluator
-
       thresholds:
         execution_time_seconds: 10
         completed_nodes: 7
@@ -472,7 +469,6 @@ evaluation:
       enabled: false
       provider: langsmith
       import_path: src.evaluation.evaluators.llm_evaluator.LLMEvaluator
-
       thresholds:
         max_calls: 10
         max_total_tokens: 15000
@@ -485,7 +481,6 @@ evaluation:
       enabled: false
       provider: custom
       import_path: src.evaluation.evaluators.tool_evaluator.ToolEvaluator
-
       thresholds:
         max_tool_latency_seconds: 5
         max_failed_tools: 0
@@ -495,7 +490,6 @@ evaluation:
       enabled: true
       provider: langsmith
       import_path: src.evaluation.evaluators.report_quality_evaluator.ReportQualityEvaluator
-
       criteria:
         - completeness
         - structure

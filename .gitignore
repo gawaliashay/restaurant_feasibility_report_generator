@@ -1,126 +1,458 @@
 # =====================================
-
 # PYTHON
-
 # =====================================
-
-**pycache**/
+__pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.manifest
+*.spec
 
 # =====================================
-
 # VIRTUAL ENVIRONMENTS
-
 # =====================================
-
 .venv/
 venv/
 env/
+ENV/
+env.bak/
+venv.bak/
+.venv.bak/
 
 # =====================================
-
 # ENVIRONMENT VARIABLES & SECRETS
-
 # =====================================
-
 .env
 .env.*
 !.env.example
+!.env.template
+*.key
+*.pem
+*.crt
+secrets/
+credentials/
 
 # =====================================
-
 # LOGS
-
 # =====================================
-
 logs/
 *.log
+*.log.*
+logs_*.txt
 
 # =====================================
-
 # TESTING & COVERAGE
-
 # =====================================
-
 .pytest_cache/
 .mypy_cache/
+.ruff_cache/
+.pytype/
+.tox/
 .coverage
+.coverage.*
 coverage/
 htmlcov/
+*.cover
+*.py,cover
+.hypothesis/
+.vscode-test/
+.no
+no
 
 # =====================================
+# JUPYTER NOTEBOOKS
+# =====================================
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
 
+# =====================================
 # IDE
-
 # =====================================
-
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.~lock*
+# Cursor IDE
+.cursor/
+*.code-workspace
+# PyCharm
+.idea/inspectionProfiles/
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries/
+.idea/vcs.xml
+.idea/jsLibraryMappings.xml
 
 # =====================================
-
 # OS FILES
-
 # =====================================
-
 .DS_Store
 Thumbs.db
+*.tmp
+*.temp
+*.bak
+*.orig
 
 # =====================================
-
 # GENERATED REPORTS
-
 # =====================================
-
 reports/
+report_*.md
+report_*.json
+report_*.html
+research_output_*.txt
+outputs/
 
 # =====================================
-
 # RAG GENERATED ARTIFACTS
-
 # =====================================
-
 data/processed/
+data/raw/
+data/interim/
+data/external/
+data/raw/base_docs/
+*.pdf
+*.docx
+*.doc
 
 # =====================================
-
 # VECTOR STORES
-
 # =====================================
-
 vectorstore/
 data/faiss_store/
 data/chroma_store/
+*.faiss
+*.index
+*.hnsw
+*.qdrant/
+*.weaviate/
 
 # =====================================
-
 # EXPERIMENT TRACKING
-
 # =====================================
-
 mlruns/
 wandb/
+*.wandb
+experiments/
+*.pt
+*.pth
+*.h5
+*.hdf5
+*.ckpt
 
 # =====================================
-
 # DATABASES
-
 # =====================================
-
 *.db
 *.sqlite
 *.sqlite3
+*.duckdb
 
 # =====================================
-
 # TEMP FILES
-
 # =====================================
-
 tmp/
 temp/
+*.tmp
+*.temp
+.cache/
+.cached/
 
+# =====================================
+# DOCKER
+# =====================================
+.docker/
+docker-compose.override.yml
+Dockerfile.local
 
-src/evaluation/
+# =====================================
+# SECURITY & CONFIG
+# =====================================
+*.conf
+*.config
+*.cfg
+!pytest.ini
+!setup.cfg
+!mypy.ini
+
+# =====================================
+# BACKUP FILES
+# =====================================
+*.backup
+*.old
+*.orig
+*.save
+*~
+
+# =====================================
+# LARGE FILES
+# =====================================
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.gz
+*.bz2
+*.iso
+*.img
+
+# =====================================
+# PACKAGE MANAGER FILES
+# =====================================
+# ✅ Keep pyproject.toml - it's important!
+# pyproject.toml is the modern Python project configuration
+# DO NOT ignore it!
+
+poetry.lock
+Pipfile.lock
+.conda
+
+# =====================================
+# UV (Fast Python package installer)
+# =====================================
+# ✅ uv.lock should be committed for reproducible builds
+# uv.lock is NOT ignored - it should be in version control
+# uv.toml - user-specific config, ignore
+
+uv.toml
+.venv-uv/
+
+# =====================================
+# PROJECT SPECIFIC
+# =====================================
+# OpenAI/LLM generated
+llm_cache/
+*.openai_cache
+
+# SerpApi cache
+serpapi_cache/
+
+# Custom
+*.pid
+.pid
+
+# =====================================
+# APPLICATION SPECIFIC
+# =====================================
+# Ignore test outputs
+test_output/
+*.test_output
+
+# Ignore local development overrides
+*.local.yaml
+*.local.yml
+
+# =====================================
+# LANGCHAIN / LANGGRAPH
+# =====================================
+.langgraph/
+langgraph_cache/
+.langsmith/
+*.langsmith
+
+# =====================================
+# QDRANT
+# =====================================
+qdrant_storage/
+*.qdrant
+
+# =====================================
+# DOCUMENTATION
+# =====================================
+docs/_build/
+site/
+*.swp
+*.swo
+
+# =====================================
+# PACKAGE INSTALLATION
+# =====================================
+*.whl
+*.tar.gz
+*.tgz
+*.zip
+*.egg
+
+# =====================================
+# PIP INSTALL LOGS
+# =====================================
+pip-log.txt
+pip-delete-this-directory.txt
+.dist/
+
+# =====================================
+# PRE-COMMIT HOOKS
+# =====================================
+.pre-commit-config.yaml.local
+.pre-commit/
+
+# =====================================
+# PROFILING
+# =====================================
+*.prof
+*.pstats
+*.lprof
+
+# =====================================
+# SENTRY
+# =====================================
+.sentry/
+
+# =====================================
+# TERRAFORM
+# =====================================
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# =====================================
+# KUBERNETES
+# =====================================
+*.kubeconfig
+helm/values.local.yaml
+
+# =====================================
+# AWS
+# =====================================
+*.aws
+.aws/
+*.pem
+*.p12
+
+# =====================================
+# GCP
+# =====================================
+*.gcp
+.gcp/
+*.json
+!package.json
+*.key.json
+
+# =====================================
+# AZURE
+# =====================================
+*.azure
+.azure/
+
+# =====================================
+# DATA FILES
+# =====================================
+*.csv
+*.xlsx
+*.xls
+*.parquet
+*.arrow
+*.feather
+*.pickle
+*.pkl
+
+# =====================================
+# MODEL FILES
+# =====================================
+*.h5
+*.hdf5
+*.ckpt
+*.pth
+*.pb
+*.onnx
+*.tflite
+*.trt
+*.engine
+
+# =====================================
+# MEDIA FILES
+# =====================================
+*.mp4
+*.avi
+*.mov
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tiff
+
+# =====================================
+# AUDIO FILES
+# =====================================
+*.mp3
+*.wav
+*.flac
+*.aac
+*.ogg
+
+# =====================================
+# WEB FILES
+# =====================================
+*.html
+*.css
+*.js
+*.map
+*.min.js
+*.min.css
+
+# =====================================
+# NPM / NODE (if frontend exists)
+# =====================================
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+.pnpm-debug.log
+
+# =====================================
+# RUBY (if using Jekyll)
+# =====================================
+*.gem
+*.rbc
+/.bundle/
+/.config/
+Gemfile.lock
+
+# =====================================
+# JAVA (if using Gradle)
+# =====================================
+*.class
+*.jar
+*.war
+*.ear
+.idea/
+*.iml
+.gradle/
+build/
+target/
+
+# =====================================
+# C / C++ / Rust (if using bindings)
+# =====================================
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+target/
+debug/
+release/
+
+# =====================================
+# MISCELLANEOUS
+# =====================================
+*.mjs
+*.cjs
+*.ts
+*.tsx
+*.jsx
+.eslintcache
+.stylelintcache

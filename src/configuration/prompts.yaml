@@ -1,3 +1,5 @@
+# src\configuration\prompts.yaml
+
 # ============================================================
 # RESEARCH SECTION PROMPTS
 # Used by ReportCompiler for generating section outputs
@@ -17,16 +19,25 @@ reporting:
       customer counts, revenue estimates, or competitor names.
     - If evidence is missing, clearly state the limitation.
 
+    INCOMPLETE DATA RULES:
+    - If data is incomplete, say it once: "Price data available for 8 out of 10 competitors."
+    - Do NOT repeat "Not available" for every field.
+    - Group missing information in the "Data Limitations" section.
+    - If you see "Note:" in the insights, use that information.
+
     FORMATTING RULES:
     - Use markdown headings: ## for sections, ### for subsections
     - Use bullet points (-) for lists
     - Use **bold** only for emphasis, never for headings
-    - Do not use bold text for section titles
     - Write in clear, professional paragraphs under each heading
+
+    CITATION RULES:
+    - List ALL sources used at the end of the section.
+    - Format: "Sources: document1.pdf, document2.pdf, document3.pdf"
+    - Example: "Sources: Legal_&_Regulatory_Handbook.pdf, Food_Safety_and_Standards_Act_2006.pdf, Maharashtra_Shops_Act.pdf"
 
     QUALITY RULES:
     - Preserve names, numbers, locations, and sources.
-    - Avoid repeating identical evidence.
     - Separate facts from interpretation.
     - Clearly identify uncertainty.
 
@@ -41,8 +52,8 @@ reporting:
     Location: {local_area}, {city}, {state}
     Target Customers: {target_demographic}
 
-    Retrieved Market Evidence:
-    {section_evidence}
+    Retrieved Market Insights:
+    {section_insights}
 
     {common_rules}
 
@@ -66,12 +77,15 @@ reporting:
     - What's the opportunity?
     - What risks exist?
 
+    ## Data Limitations
+    What information is missing or incomplete?
+
     ## Evidence Gaps
-    What information is missing for a confident decision?
+    What additional information would help?
 
   # ==========================================================
-  # COMPETITIVE ANALYSIS
-  # ==========================================================
+# COMPETITIVE ANALYSIS
+# ==========================================================
 
   competitive_analysis: |
     You are a restaurant competition analyst.
@@ -79,8 +93,8 @@ reporting:
     Concept: {restaurant_concept}
     Location: {local_area}, {city}, {state}
 
-    Retrieved Competitor Evidence:
-    {section_evidence}
+    Retrieved Competitor Insights:
+    {section_insights}
 
     {common_rules}
 
@@ -91,7 +105,7 @@ reporting:
 
     | Name | Category | Rating | Reviews | Price |
     |------|----------|--------|---------|-------|
-    | ...  | ...      | ...    | ...     | ...   |
+    | ...  | ...      | ...    | ...     | ...   | 
 
     ## Pricing Position
     Analyze observed pricing patterns:
@@ -110,7 +124,7 @@ reporting:
     - Cuisine gaps
     - Service gaps
 
-    ## Limitations
+    ## Data Limitations
     What competitor information is not available?
 
   # ==========================================================
@@ -123,8 +137,8 @@ reporting:
     Location: {local_area}, {city}, {state}
     Target: {target_demographic}
 
-    Retrieved Evidence:
-    {section_evidence}
+    Retrieved Insights:
+    {section_insights}
 
     {common_rules}
 
@@ -153,6 +167,9 @@ reporting:
     - What price point works?
     - What are the operating hours?
 
+    ## Data Limitations
+    What demographic information is not available?
+
   # ==========================================================
   # LOCATION ANALYSIS
   # ==========================================================
@@ -162,8 +179,8 @@ reporting:
 
     Location: {local_area}, {city}, {state}
 
-    Retrieved Evidence:
-    {section_evidence}
+    Retrieved Insights:
+    {section_insights}
 
     {common_rules}
 
@@ -192,7 +209,7 @@ reporting:
     - Potential challenges
     - Suitability for restaurant
 
-    ## Missing Information
+    ## Data Limitations
     What location data is unavailable?
 
   # ==========================================================
@@ -205,29 +222,47 @@ reporting:
     Concept: {restaurant_concept}
     Location: {city}, {state}
 
-    Regulatory Evidence:
-    {section_evidence}
+    Regulatory Insights:
+    {section_insights}
 
     {common_rules}
 
     Generate ONLY these sections. Do not add extra sections.
 
     ## Required Licenses and Permits
-    List licenses explicitly found in evidence.
-    Include costs if mentioned.
+    List all licenses and permits mentioned in the evidence with details:
+    - License/permit name
+    - Issuing authority
+    - Cost (if mentioned)
+    - Timeline (if mentioned)
+    - Validity period (if mentioned)
+    - Prerequisites (if mentioned)
 
     ## Operational Compliance
-    What operational requirements exist?
-    - Daily operations
-    - Staff requirements
-    - Health and safety
+    List operational requirements mentioned in the evidence:
+    - **Working Hours**: Daily and weekly limits
+    - **Staff Requirements**: Hiring, verification, training
+    - **Health and Safety**: Inspections, hygiene, food safety
+    - **Reporting**: Change reporting, renewals, notifications
+
+    ## Penalties and Fines
+    List penalties mentioned in the evidence:
+    - Violation type
+    - Penalty amount
+    - Imprisonment (if mentioned)
+    - Authority that enforces
 
     ## Authorities Mentioned
-    Which regulatory bodies are involved?
-    - Include only if present in evidence
+    List all regulatory bodies and their roles.
 
-    ## Missing Information
-    What compliance details are not available?
+    ## Compliance Checklist
+    Provide practical, actionable steps:
+    - Step with timeline
+    - Responsible authority
+    - Frequency (one-time, annual, etc.)
+
+    ## Data Limitations
+    - What compliance information is missing?
 
     Never invent license names, fees, or authorities.
 
@@ -242,18 +277,10 @@ reporting:
     Concept: {restaurant_concept}
     Location: {local_area}, {city}
 
-    Research Evidence from all previous sections:
-    {section_evidence}
+    Research Insights from all previous sections:
+    {section_insights}
 
     {common_rules}
-
-    Derive risks from evidence:
-    - Many competitors → Market saturation risk
-    - High competitor ratings → Quality expectations risk
-    - Premium location → High operating cost risk
-    - Compliance requirements → Cost and complexity risk
-    - Missing data (parking, footfall) → Location uncertainty risk
-    - Low price points → Thin margin risk
 
     Generate ONLY these sections. Do not add extra sections.
 
@@ -261,22 +288,26 @@ reporting:
     From Market Analysis and Competitive Analysis:
     - What competitive threats exist?
     - Is the market saturated?
+    - Based on available evidence
 
     ## Location Risks
     From Location Analysis:
     - Accessibility issues?
     - Footfall concerns?
+    - Based on available evidence
 
     ## Operational Risks
     From Compliance and Demographics:
     - Regulatory compliance risks
     - Staffing risks
     - Target audience mismatch
+    - Based on available evidence
 
     ## Financial Risks
     From Investment and compliance:
     - Is the investment adequate?
     - Hidden costs mentioned?
+    - Based on available evidence
 
     For each risk include:
     - Risk description
@@ -284,13 +315,13 @@ reporting:
     - Severity: High/Medium/Low
     - Practical mitigation
 
-    ## Evidence Gaps
-    What missing information could hide additional risks?
-
     ## Unknown Risks
     What cannot be evaluated without more data?
 
     Every risk must trace to specific evidence.
+
+    ## Data Limitations
+    What missing information could hide additional risks?
 
   # ==========================================================
   # STRATEGIC RECOMMENDATIONS
@@ -303,8 +334,8 @@ reporting:
     Concept: {restaurant_concept}
     Location: {local_area}, {city}
 
-    Research Evidence from all sections:
-    {section_evidence}
+    Research Insights from all sections:
+    {section_insights}
 
     {common_rules}
 
@@ -333,6 +364,9 @@ reporting:
     - Resources needed
     - Key risks to watch
 
+    ## Data Limitations
+    What additional information would strengthen these recommendations?
+
     Avoid unsupported assumptions.
 
 # ============================================================
@@ -349,8 +383,8 @@ report:
     Location: {local_area}, {city}, {state}
     Investment: {investment}
 
-    Research Evidence:
-    {section_evidence}
+    Research Insights:
+    {section_insights}
 
     {common_rules}
 
@@ -369,6 +403,9 @@ report:
     ## Key Risks
     - What could go wrong?
 
+    ## Data Limitations
+    - What information is missing?
+
     ## Recommendation
     - GO / CONDITIONAL GO / NO GO
 
@@ -382,7 +419,7 @@ report:
     Location: {local_area}, {city}
 
     Available Findings:
-    {section_evidence}
+    {section_insights}
 
     {common_rules}
 
@@ -391,6 +428,7 @@ report:
     ## Overall Assessment
     Based on all evidence, what is the assessment?
 
+    ## Recommendation
     Provide one recommendation:
     GO
     CONDITIONAL GO
@@ -414,7 +452,7 @@ report_template:
     {restaurant_concept}
 
     Location:
-    {local_area}, {city}, {state}
+    {local_area}, {city}, {state}, {country}
 
     Investment:
     {investment}
