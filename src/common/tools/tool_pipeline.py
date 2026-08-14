@@ -1,175 +1,131 @@
-# src\common\tools\tool_pipeline.py
+"""
+Common tool execution pipeline.
 
-""" 
-Common tool execution pipeline. 
- 
-Responsibilities: 
-- Validate tool name. 
-- Validate required parameters. 
-- Execute the configured connector. 
-- Return a standard result. 
-""" 
+Responsibilities:
+- Validate tool name exists
+- Validate required parameters
+- Execute the tool
+- Return standardized response
+"""
 
-import logging 
-from typing import Any, Callable 
+import logging
+from typing import Any
 
-from src.common.tools.client_connector import ( 
-    google_maps, 
-    google_trends, 
-    rag, 
-    tavily, 
-) 
-from src.configuration.config_loader import config_loader 
+from src.common.tools.client_connector import TOOLS
+from src.configuration.config_loader import config_loader
 
-logger = logging.getLogger(__name__) 
-
-ToolFunction = Callable[..., dict[str, Any]] 
+logger = logging.getLogger(__name__)
 
 
-# ============================================================ 
-# TOOL REGISTRY 
-# ============================================================ 
+def run_tool(tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
+    """
+    Execute a tool with validation.
 
-TOOL_REGISTRY: dict[str, ToolFunction] = { 
-    "google_maps": google_maps, 
-    "tavily_search": tavily, 
-    "google_trends": google_trends, 
-    "rag": rag, 
-} 
+    Args:
+        tool_name: Name of the tool to execute
+        params: Parameters for the tool
 
+    Returns:
+        Standardized response: {tool, status, data, error}
+    """
+    logger.info(f"Executing tool: {tool_name}")
 
-# ============================================================ 
-# EXECUTION 
-# ============================================================ 
+    # Step 1: Check if tool exists
+    tool = TOOLS.get(tool_name)
+    if tool is None:
+        return {
+            "tool": tool_name,
+            "status": "failed",
+            "data": [],
+            "error": f"Unknown tool: {tool_name}",
+        }
 
-def run_tool_pipeline( 
-    tool_name: str, 
-    params: dict[str, Any], 
-) -> dict[str, Any]: 
-    """Execute a configured tool.""" 
+    # Step 2: Validate parameters
+    error = _validate_params(tool_name, params)
+    if error:
+        return {
+            "tool": tool_name,
+            "status": "failed",
+            "data": [],
+            "error": error,
+        }
 
-    logger.info("Tool execution started: %s", tool_name) 
+    # Step 3: Execute tool
+    try:
+        response = tool(**params)
 
-    tool = TOOL_REGISTRY.get(tool_name) 
+        if response.get("status") != "success":
+            return {
+                "tool": tool_name,
+                "status": "failed",
+                "data": [],
+                "error": response.get("error", "Tool execution failed"),
+            }
 
-    if tool is None: 
-        return _failure( 
-            tool_name, 
-            f"Unknown tool: {tool_name}", 
-        ) 
+        logger.info(f"Tool executed successfully: {tool_name}")
 
-    error = _validate_params(tool_name, params) 
+        return {
+            "tool": tool_name,
+            "status": "success",
+            "data": response.get("data", []),
+            "error": None,
+        }
 
-    if error: 
-        return _failure(tool_name, error) 
-
-    try: 
-        response = tool(**params) 
-
-        if not response.get("success"): 
-            return _failure( 
-                tool_name, 
-                response.get("error", "Tool execution failed"), 
-            ) 
-
-        logger.info( 
-            "Tool execution completed: %s", 
-            tool_name, 
-        ) 
-
-        return { 
-            "tool": tool_name, 
-            "status": "success", 
-            "data": response.get("data"), 
-        } 
-
-    except Exception as exc: 
-        logger.exception( 
-            "Tool execution failed: %s", 
-            tool_name, 
-        ) 
-
-        return _failure(tool_name, str(exc)) 
+    except Exception as e:
+        logger.exception(f"Tool execution failed: {tool_name}")
+        return {
+            "tool": tool_name,
+            "status": "failed",
+            "data": [],
+            "error": str(e),
+        }
 
 
-# ============================================================ 
-# VALIDATION 
-# ============================================================ 
+def _validate_params(tool_name: str, params: dict[str, Any]) -> str | None:
+    """
+    Validate required parameters from configuration.
 
-def _validate_params( 
-    tool_name: str, 
-    params: dict[str, Any], 
-) -> str | None: 
-    """Validate required parameters from configuration.""" 
+    Returns:
+        str | None: Error message if invalid, None if valid.
+    """
+    tool_config = config_loader.get(f"tools.{tool_name}", {})
 
-    tool_config = config_loader.get( 
-        f"tools.{tool_name}", 
-        {}, 
-    ) 
+    if not isinstance(tool_config, dict):
+        return f"Tool configuration not found: {tool_name}"
 
-    if not isinstance(tool_config, dict): 
-        return f"Tool configuration not found: {tool_name}" 
+    # Get required query parameter
+    query_param = tool_config.get("query_parameter")
 
-    query_parameter = tool_config.get("query_parameter") 
+    if not query_param:
+        return None
 
-    if not query_parameter: 
-        return None 
+    # Check if parameter exists
+    value = params.get(query_param)
 
-    value = params.get(query_parameter) 
+    if value is None:
+        return f"Missing required parameter: '{query_param}'"
 
-    if value is None: 
-        return ( 
-            f"Missing required parameter " 
-            f"'{query_parameter}'" 
-        ) 
+    # Validate string values
+    if isinstance(value, str) and not value.strip():
+        return f"Parameter '{query_param}' cannot be empty"
 
-    # Handle string values 
-    if isinstance(value, str) and not value.strip(): 
-        return ( 
-            f"Parameter '{query_parameter}' " 
-            f"cannot be empty" 
-        ) 
+    # Validate list values
+    if isinstance(value, list):
+        if not value:
+            return f"Parameter '{query_param}' cannot be empty"
+        if isinstance(value[0], str) and not value[0].strip():
+            return f"Parameter '{query_param}' contains empty string"
 
-    # Handle list values 
-    if isinstance(value, list): 
-        if not value: 
-            return ( 
-                f"Parameter '{query_parameter}' " 
-                f"cannot be empty" 
-            ) 
-        # Check first element 
-        if isinstance(value[0], str) and not value[0].strip(): 
-            return ( 
-                f"Parameter '{query_parameter}' " 
-                f"contains empty string" 
-            ) 
+    # Validate location parameter for google_maps
+    location_param = tool_config.get("location_parameter")
+    if location_param:
+        location_value = params.get(location_param)
+        if isinstance(location_value, str) and not location_value.strip():
+            return f"Parameter '{location_param}' cannot be empty"
 
-    # Handle location parameter for google_maps 
-    location_param = tool_config.get("location_parameter") 
-    if location_param: 
-        location_value = params.get(location_param) 
-        if isinstance(location_value, str) and not location_value.strip(): 
-            return f"Parameter '{location_param}' cannot be empty" 
-
-    return None 
+    return None
 
 
-# ============================================================ 
-# HELPERS 
-# ============================================================ 
-
-def _failure( 
-    tool_name: str, 
-    error: str, 
-) -> dict[str, Any]: 
-    return { 
-        "tool": tool_name, 
-        "status": "failed", 
-        "error": error, 
-    } 
-
-
-def get_available_tools() -> list[str]: 
-    """Return registered tool names.""" 
-
-    return list(TOOL_REGISTRY) 
+def get_available_tools() -> list[str]:
+    """Return list of registered tool names."""
+    return list(TOOLS.keys())
