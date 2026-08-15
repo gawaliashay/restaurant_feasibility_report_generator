@@ -1,11 +1,11 @@
 """
-Research workflow.
+Research workflow - Evidence Collection only.
 
 Responsibilities:
-- Orchestrate configured research sections.
-- Resolve section dependencies.
-- Maintain WorkflowState.
-- Delegate section execution to ResearchSectionRunner.
+- Orchestrate 5 independent research sections
+- All sections run in parallel (no dependencies)
+- Maintain WorkflowState
+- Delegate section execution to ResearchSectionRunner
 
 No tool-specific logic belongs here.
 """
@@ -21,7 +21,7 @@ from src.workflow.research.research_section_runner import ResearchSectionRunner
 
 
 class ResearchWorkflow:
-    """Orchestrate configured research sections."""
+    """Orchestrate evidence collection sections (all independent)."""
 
     def __init__(self) -> None:
         self.sections = config_loader.get("research.sections", {})
@@ -29,41 +29,66 @@ class ResearchWorkflow:
         self.workflow = self._build_workflow()
 
     def _build_workflow(self):
-        """Build the research DAG from configuration."""
+        """Build DAG with all research sections running in parallel."""
         graph = StateGraph(WorkflowState)
+
+        # Only evidence-producing sections (independent)
+        research_sections = [
+            "market_analysis",
+            "competitive_analysis",
+            "location_analysis",
+            "customer_demographics",
+            "compliance_requirements",
+        ]
 
         # Get enabled sections
         enabled_sections = [
-            name for name, config in self.sections.items()
-            if config.get("enabled", True)
+            name for name in research_sections
+            if self.sections.get(name, {}).get("enabled", True)
         ]
 
         # Add nodes for each enabled section
         for section_name in enabled_sections:
             graph.add_node(section_name, self._create_section_node(section_name))
 
-        # Add edges based on dependencies
+        # All sections start from START and go to END (parallel)
         for section_name in enabled_sections:
-            dependencies = self.sections[section_name].get("dependencies", [])
-            # Filter out disabled dependencies
-            dependencies = [d for d in dependencies if d in enabled_sections]
-
-            if not dependencies:
-                graph.add_edge(START, section_name)
-            else:
-                for dependency in dependencies:
-                    graph.add_edge(dependency, section_name)
-
-        # Add edges to END for sections with no dependents
-        for section_name in enabled_sections:
-            has_dependents = any(
-                section_name in self.sections[other].get("dependencies", [])
-                for other in enabled_sections
-            )
-            if not has_dependents:
-                graph.add_edge(section_name, END)
+            graph.add_edge(START, section_name)
+            graph.add_edge(section_name, END)
 
         return graph.compile()
+
+    # def _build_workflow(self):
+    #     """Build DAG with all research sections running in parallel."""
+    #     graph = StateGraph(WorkflowState)
+
+    #     # ============================================================
+    #     # ADD NODES - 5 Independent Research Sections
+    #     # ============================================================
+
+    #     graph.add_node("market_analysis", self._create_section_node("market_analysis"))
+    #     graph.add_node("competitive_analysis", self._create_section_node("competitive_analysis"))
+    #     graph.add_node("location_analysis", self._create_section_node("location_analysis"))
+    #     graph.add_node("customer_demographics", self._create_section_node("customer_demographics"))
+    #     graph.add_node("compliance_requirements", self._create_section_node("compliance_requirements"))
+
+    #     # ============================================================
+    #     # ADD EDGES - All Start from START, All End at END
+    #     # ============================================================
+
+    #     graph.add_edge(START, "market_analysis")
+    #     graph.add_edge(START, "competitive_analysis")
+    #     graph.add_edge(START, "location_analysis")
+    #     graph.add_edge(START, "customer_demographics")
+    #     graph.add_edge(START, "compliance_requirements")
+
+    #     graph.add_edge("market_analysis", END)
+    #     graph.add_edge("competitive_analysis", END)
+    #     graph.add_edge("location_analysis", END)
+    #     graph.add_edge("customer_demographics", END)
+    #     graph.add_edge("compliance_requirements", END)
+
+    #     return graph.compile()
 
     def _create_section_node(self, section_name: str):
         """Create a LangGraph node for one research section."""

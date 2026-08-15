@@ -1,3 +1,5 @@
+# src\workflow\research\research_section_runner.py
+
 """
 Execute one configured research section.
 

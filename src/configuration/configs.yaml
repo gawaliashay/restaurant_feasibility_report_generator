@@ -38,17 +38,6 @@ apis:
 
 
 # ============================================================
-# EXPORT
-# ============================================================
-
-export:
-  formats:
-    - md
-    - json
-  timestamp_format: "%Y%m%d_%H%M%S"
-
-
-# ============================================================
 # BUSINESS CASE - LOCAL DEVELOPMENT
 # ============================================================
 
@@ -71,10 +60,12 @@ business_case:
 # RESEARCH
 # ============================================================
 
+# ============================================================
+# RESEARCH - Evidence Collection (All Independent)
+# ============================================================
+
 research:
-
   sections:
-
     market_analysis:
       enabled: true
       title: Market Analysis
@@ -90,7 +81,6 @@ research:
           - "{restaurant_concept} market demand trends {city} India"
           - "{restaurant_concept} consumer preferences dining trends {city} India"
           - "restaurant food delivery market trends {city} India"
-      dependencies: []
 
     competitive_analysis:
       enabled: true
@@ -105,7 +95,6 @@ research:
         tavily_search:
           - "{restaurant_concept} competitors {local_area} {city} pricing menu"
           - "{restaurant_concept} reviews positioning {local_area} {city}"
-      dependencies: []
 
     location_analysis:
       enabled: true
@@ -116,13 +105,12 @@ research:
         - tavily_search
       queries:
         google_maps:
-          - "colleges offices shopping centers  in {local_area}, {city}"
+          - "colleges offices shopping centers in {local_area}, {city}"
           - "Corporate companies commercial hubs in {local_area}, {city}"
         tavily_search:
           - "{local_area} {city} commercial residential development"
           - "{local_area} {city} connectivity parking public transport"
           - "{local_area} {city} footfall traffic"
-      dependencies: []
 
     customer_demographics:
       enabled: true
@@ -135,7 +123,6 @@ research:
           - "{local_area} {city} population, income and demographics"
           - "{local_area} {city} consumer spending dining habits"
           - "{local_area} {city} food preferences restaurant trends"
-      dependencies: []
 
     compliance_requirements:
       enabled: true
@@ -150,29 +137,92 @@ research:
           - "Maharashtra Shops and Establishments registration and working hours"
           - "Maharashtra restaurant municipal trade license and Fire NOC"
           - "restaurant eating house and music license requirements India"
-      dependencies: []
+
+
+# ============================================================
+# REPORT - Analysis & Synthesis
+# ============================================================
+
+report:
+  sections:
+    market_report:
+      enabled: true
+      title: Market Analysis Report
+      prompt: market_analysis_report
+      dependencies:
+        - market_analysis
+
+    competitive_report:
+      enabled: true
+      title: Competitive Analysis Report
+      prompt: competitive_analysis_report
+      dependencies:
+        - competitive_analysis
+
+    location_report:
+      enabled: true
+      title: Location Analysis Report
+      prompt: location_analysis_report
+      dependencies:
+        - location_analysis
+
+    demographics_report:
+      enabled: true
+      title: Customer Demographics Report
+      prompt: demographics_report
+      dependencies:
+        - customer_demographics
+
+    compliance_report:
+      enabled: true
+      title: Compliance Requirements Report
+      prompt: compliance_report
+      dependencies:
+        - compliance_requirements
 
     risk_assessment:
       enabled: true
       title: Risk Assessment
       prompt: risk_assessment
-      tools: []
-      queries: {}
       dependencies:
-        - market_analysis
-        - competitive_analysis
-        - location_analysis
-        - customer_demographics
-        - compliance_requirements
+        - market_report
+        - competitive_report
+        - location_report
+        - demographics_report
+        - compliance_report
 
     strategic_recommendations:
       enabled: true
       title: Strategic Recommendations
       prompt: strategic_recommendations
-      tools: []
-      queries: {}
       dependencies:
         - risk_assessment
+
+    final_compilation:
+      enabled: true
+      title: Complete Research Report
+      prompt: final_report
+      dependencies:
+        - market_report
+        - competitive_report
+        - location_report
+        - demographics_report
+        - compliance_report
+        - risk_assessment
+        - strategic_recommendations
+
+
+# ============================================================
+# EXPORT - Separate from Report Sections
+# ============================================================
+
+export:
+  enabled: true
+  formats:
+    - md
+    - json
+  output_dir: reports
+  timestamp_format: "%Y%m%d_%H%M%S"
 
 
 # ============================================================
