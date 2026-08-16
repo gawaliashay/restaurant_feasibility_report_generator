@@ -90,7 +90,7 @@ def save_json(results: dict) -> str:
     
     os.makedirs("reports", exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"reports/research_results_{timestamp}.json"
+    filename = f"reports/processed_evidence/research_results_{timestamp}.json"
     
     data = {
         "timestamp": datetime.now().isoformat(),

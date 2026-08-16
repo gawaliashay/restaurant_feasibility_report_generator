@@ -42,10 +42,10 @@ reporting:
     - Clearly identify uncertainty.
 
   # ==========================================================
-  # MARKET ANALYSIS
+  # MARKET ANALYSIS PROMPT
   # ==========================================================
 
-  market_analysis: |
+  market_analysis_prompt: |
     You are a restaurant market research analyst.
 
     Restaurant Concept: {restaurant_concept}
@@ -84,10 +84,10 @@ reporting:
     What additional information would help?
 
   # ==========================================================
-# COMPETITIVE ANALYSIS
+# COMPETITIVE ANALYSIS PROMPT
 # ==========================================================
 
-  competitive_analysis: |
+  competitive_analysis_prompt: |
     You are a restaurant competition analyst.
 
     Concept: {restaurant_concept}
@@ -128,10 +128,10 @@ reporting:
     What competitor information is not available?
 
   # ==========================================================
-  # CUSTOMER DEMOGRAPHICS
+  # CUSTOMER DEMOGRAPHICS PROMPT
   # ==========================================================
 
-  customer_demographics: |
+  customer_demographics_prompt: |
     You are analyzing customer demographics for a restaurant owner.
 
     Location: {local_area}, {city}, {state}
@@ -171,10 +171,10 @@ reporting:
     What demographic information is not available?
 
   # ==========================================================
-  # LOCATION ANALYSIS
+  # LOCATION ANALYSIS PORMPT
   # ==========================================================
 
-  location_analysis: |
+  location_analysis_prompt: |
     You are a location analyst evaluating restaurant site viability.
 
     Location: {local_area}, {city}, {state}
@@ -213,10 +213,10 @@ reporting:
     What location data is unavailable?
 
   # ==========================================================
-  # COMPLIANCE REQUIREMENTS
+  # COMPLIANCE REQUIREMENTS PORMPT
   # ==========================================================
 
-  compliance_requirements: |
+  compliance_requirements_prompt: |
     You are a restaurant compliance specialist.
 
     Concept: {restaurant_concept}
@@ -267,10 +267,10 @@ reporting:
     Never invent license names, fees, or authorities.
 
   # ==========================================================
-  # RISK ASSESSMENT
+  # RISK ASSESSMENT PROMPT
   # ==========================================================
 
-  risk_assessment: |
+  risk_assessment_prompt: |
     You are a risk analyst helping a restaurant owner identify potential risks.
 
     Business Context:
@@ -324,10 +324,10 @@ reporting:
     What missing information could hide additional risks?
 
   # ==========================================================
-  # STRATEGIC RECOMMENDATIONS
+  # STRATEGIC RECOMMENDATIONS PROMPT
   # ==========================================================
 
-  strategic_recommendations: |
+  strategic_recommendations_prompt: |
     You are a restaurant business strategy consultant.
 
     Business Context:
@@ -370,74 +370,74 @@ reporting:
     Avoid unsupported assumptions.
 
 # ============================================================
-# FINAL REPORT PROMPTS
+# FINAL REPORT PROMPT
 # ============================================================
 
-report:
+  final_report_prompt:
 
-  executive_summary: |
-    You are preparing an executive summary for a restaurant feasibility report.
+    executive_summary: |
+      You are preparing an executive summary for a restaurant feasibility report.
 
-    Business Context:
-    Concept: {restaurant_concept}
-    Location: {local_area}, {city}, {state}
-    Investment: {investment}
+      Business Context:
+      Concept: {restaurant_concept}
+      Location: {local_area}, {city}, {state}
+      Investment: {investment}
 
-    Research Insights:
-    {section_insights}
+      Research Insights:
+      {section_insights}
 
-    {common_rules}
+      {common_rules}
 
-    Create a concise executive summary covering:
+      Create a concise executive summary covering:
 
-    ## Market Opportunity
-    - Is there demand? What's the potential?
+      ## Market Opportunity
+      - Is there demand? What's the potential?
 
-    ## Competitive Position
-    - Who are the competitors? Where do you fit?
+      ## Competitive Position
+      - Who are the competitors? Where do you fit?
 
-    ## Financial View
-    - Investment adequacy
-    - Pricing insights from competition
+      ## Financial View
+      - Investment adequacy
+      - Pricing insights from competition
 
-    ## Key Risks
-    - What could go wrong?
+      ## Key Risks
+      - What could go wrong?
 
-    ## Data Limitations
-    - What information is missing?
+      ## Data Limitations
+      - What information is missing?
 
-    ## Recommendation
-    - GO / CONDITIONAL GO / NO GO
+      ## Recommendation
+      - GO / CONDITIONAL GO / NO GO
 
-    Use only available evidence. Be honest about gaps.
+      Use only available evidence. Be honest about gaps.
 
-  conclusion: |
-    You are preparing the final conclusion of a restaurant feasibility assessment.
+    conclusion: |
+      You are preparing the final conclusion of a restaurant feasibility assessment.
 
-    Business Context:
-    Concept: {restaurant_concept}
-    Location: {local_area}, {city}
+      Business Context:
+      Concept: {restaurant_concept}
+      Location: {local_area}, {city}
 
-    Available Findings:
-    {section_insights}
+      Available Findings:
+      {section_insights}
 
-    {common_rules}
+      {common_rules}
 
-    Evaluate:
+      Evaluate:
 
-    ## Overall Assessment
-    Based on all evidence, what is the assessment?
+      ## Overall Assessment
+      Based on all evidence, what is the assessment?
 
-    ## Recommendation
-    Provide one recommendation:
-    GO
-    CONDITIONAL GO
-    NO GO
+      ## Recommendation
+      Provide one recommendation:
+      GO
+      CONDITIONAL GO
+      NO GO
 
-    Justify the recommendation using evidence only.
+      Justify the recommendation using evidence only.
 
-    ## Next Steps
-    Provide 4-6 actionable next steps for the restaurant owner.
+      ## Next Steps
+      Provide 4-6 actionable next steps for the restaurant owner.
 
 # ============================================================
 # REPORT TEMPLATE
@@ -445,7 +445,7 @@ report:
 
 report_template:
 
-  final_report: |
+  final_report_template: |
     # RESTAURANT BUSINESS FEASIBILITY REPORT
 
     Concept:

@@ -11,7 +11,7 @@ from typing import Any
 from langchain_tavily import TavilySearch
 
 from src.configuration.config_loader import config_loader
-from .query_normalizer import normalize_query
+from ..query_normalizer import normalize_query
 
 logger = logging.getLogger(__name__)
 

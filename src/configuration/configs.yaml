@@ -55,11 +55,6 @@ business_case:
     target_demographic: "Professionals 25-45, health-conscious"
     special_note: "momo demand, spending power, competition density"
 
-
-# ============================================================
-# RESEARCH
-# ============================================================
-
 # ============================================================
 # RESEARCH - Evidence Collection (All Independent)
 # ============================================================
@@ -69,7 +64,6 @@ research:
     market_analysis:
       enabled: true
       title: Market Analysis
-      prompt: market_analysis
       tools:
         - google_trends
         - tavily_search
@@ -85,7 +79,6 @@ research:
     competitive_analysis:
       enabled: true
       title: Competitive Analysis
-      prompt: competitive_analysis
       tools:
         - google_maps
         - tavily_search
@@ -99,7 +92,6 @@ research:
     location_analysis:
       enabled: true
       title: Location Analysis
-      prompt: location_analysis
       tools:
         - google_maps
         - tavily_search
@@ -115,7 +107,6 @@ research:
     customer_demographics:
       enabled: true
       title: Customer Demographics
-      prompt: customer_demographics
       tools:
         - tavily_search
       queries:
@@ -127,7 +118,6 @@ research:
     compliance_requirements:
       enabled: true
       title: Compliance Requirements
-      prompt: compliance_requirements
       tools:
         - rag
       queries:
@@ -138,6 +128,13 @@ research:
           - "Maharashtra restaurant municipal trade license and Fire NOC"
           - "restaurant eating house and music license requirements India"
 
+# ============================================================
+# RESEARCH LIMITS
+# ============================================================
+  limits:
+  
+  max_evidence_chars: 2000
+  max_text_per_result: 300
 
 # ============================================================
 # REPORT - Analysis & Synthesis
@@ -148,42 +145,37 @@ report:
     market_report:
       enabled: true
       title: Market Analysis Report
-      prompt: market_analysis_report
-      dependencies:
-        - market_analysis
+      prompt: market_analysis_prompt
+      dependencies: []   # ✅ No dependencies - gets evidence from research_results
 
     competitive_report:
       enabled: true
       title: Competitive Analysis Report
-      prompt: competitive_analysis_report
-      dependencies:
-        - competitive_analysis
+      prompt: competitive_analysis_prompt
+      dependencies: []   # ✅ No dependencies
 
     location_report:
       enabled: true
       title: Location Analysis Report
-      prompt: location_analysis_report
-      dependencies:
-        - location_analysis
+      prompt: location_analysis_prompt
+      dependencies: []   # ✅ No dependencies
 
     demographics_report:
       enabled: true
       title: Customer Demographics Report
-      prompt: demographics_report
-      dependencies:
-        - customer_demographics
+      prompt: customer_demographics_prompt
+      dependencies: []   # ✅ No dependencies
 
     compliance_report:
       enabled: true
       title: Compliance Requirements Report
-      prompt: compliance_report
-      dependencies:
-        - compliance_requirements
+      prompt: compliance_requirements_prompt
+      dependencies: []   # ✅ No dependencies
 
     risk_assessment:
       enabled: true
       title: Risk Assessment
-      prompt: risk_assessment
+      prompt: risk_assessment_prompt
       dependencies:
         - market_report
         - competitive_report
@@ -194,14 +186,13 @@ report:
     strategic_recommendations:
       enabled: true
       title: Strategic Recommendations
-      prompt: strategic_recommendations
+      prompt: strategic_recommendations_prompt
       dependencies:
         - risk_assessment
 
     final_compilation:
       enabled: true
       title: Complete Research Report
-      prompt: final_report
       dependencies:
         - market_report
         - competitive_report
@@ -223,15 +214,6 @@ export:
     - json
   output_dir: reports
   timestamp_format: "%Y%m%d_%H%M%S"
-
-
-# ============================================================
-# RESEARCH LIMITS
-# ============================================================
-
-research_limits:
-  max_evidence_chars: 3000
-  max_text_per_result: 500
 
 # ============================================================
 # TOOL CONFIGURATION
@@ -264,7 +246,7 @@ defaults:
   primary_llm: groq
   fast_llm: groq
   creative_llm: groq
-  analysis_llm: groq
+  analysis_llm: openai
 
 models:
   llms:
@@ -273,14 +255,14 @@ models:
       import_path: langchain_groq.ChatGroq
       api_key: ${GROQ_API_KEY}
       temperature: 0.3
-      max_tokens: 2048
+      max_tokens: 512
 
     openai:
       model_name: gpt-4o-mini
       import_path: langchain_openai.ChatOpenAI
       api_key: ${OPENAI_API_KEY}
       temperature: 0.3
-      max_tokens: 2048
+      max_tokens: 512
 
 
 # ============================================================

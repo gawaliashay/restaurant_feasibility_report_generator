@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Dict, Any, List
 from langgraph.checkpoint.memory import MemorySaver
 
-from src.workflow.section_research_engine import SectionResearchEngine
+from src.workflow.research.section_research_engine import SectionResearchEngine
 from src.graph_states.workflow_states import WorkflowState
 
 

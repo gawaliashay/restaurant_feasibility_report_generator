@@ -4,8 +4,8 @@
 Workflow state for the restaurant market research pipeline.
 """
 
-from typing import Any, TypedDict, Annotated, Any
 import operator
+from typing import Annotated, Any, TypedDict
 
 
 class WorkflowState(TypedDict, total=False):
@@ -24,16 +24,19 @@ class WorkflowState(TypedDict, total=False):
     pincode: str
     country: str
 
-    # Research
-    research_results: Annotated[dict[str, Any],operator.or_,]
+    # Research Evidence
+    research_results: Annotated[dict[str, Any], operator.or_]
 
-    # Analysis
+    # Section Reports
+    section_reports: Annotated[dict[str, Any], operator.or_]
+
+    # Cross-section Analysis
     risk_assessment: dict[str, Any]
     strategic_recommendations: dict[str, Any]
 
-    # Report
+    # Final Report
     final_report: dict[str, Any]
     export_paths: dict[str, Any]
 
     # Runtime
-    errors: list[dict[str, Any]]
+    errors: Annotated[list[dict[str, Any]], operator.add]

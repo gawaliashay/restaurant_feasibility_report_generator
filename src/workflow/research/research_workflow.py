@@ -1,3 +1,5 @@
+# src\workflow\research\research_workflow.py
+
 """
 Research workflow - Evidence Collection only.
 
@@ -33,19 +35,19 @@ class ResearchWorkflow:
         graph = StateGraph(WorkflowState)
 
         # Only evidence-producing sections (independent)
-        research_sections = [
-            "market_analysis",
-            "competitive_analysis",
-            "location_analysis",
-            "customer_demographics",
-            "compliance_requirements",
+        # research_sections =
+        #     "market_analysis"
+        #     "competitive_analysis"
+        #     "location_analysis"
+        #     "customer_demographics"
+        #     "compliance_requirements"
+
+        # Get all enabled sections from config
+        enabled_sections = [
+            name for name, config in self.sections.items()
+            if config.get("enabled", True)
         ]
 
-        # Get enabled sections
-        enabled_sections = [
-            name for name in research_sections
-            if self.sections.get(name, {}).get("enabled", True)
-        ]
 
         # Add nodes for each enabled section
         for section_name in enabled_sections:

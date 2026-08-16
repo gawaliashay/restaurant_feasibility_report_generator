@@ -1,119 +1,85 @@
 """
-Application entry point.
-
-Responsibilities:
-- Load the configured business case.
-- Start the configured research workflow.
-- Pass workflow state between pipeline stages.
-- Return the final pipeline result.
-
-Business logic belongs to the workflow modules.
-Configuration belongs to configs.yaml.
-Tool execution belongs to the common tool pipeline.
+Complete pipeline runner.
+Executes both research and report workflows.
 """
 
-from __future__ import annotations
-
-import logging
-import uuid
-from datetime import datetime
-from typing import Any, Dict
-
+from src.graph_states.workflow_states import WorkflowState
+from src.workflow.research.research_workflow import ResearchWorkflow
+from src.workflow.report.report_workflow import ReportWorkflow
+from src.workflow.report.report_exporter import export_report
 from src.configuration.config_loader import config_loader
-from src.workflow.research_orchestrator import research_orchestrator
 
 
-logger = logging.getLogger(__name__)
+def build_state() -> WorkflowState:
+    """Build initial state from config."""
+    business = config_loader.get("business_case.default", {})
+    location = business.get("location", {})
+
+    return {
+        "restaurant_concept": business.get("restaurant_concept"),
+        "investment": business.get("investment"),
+        "target_demographic": business.get("target_demographic"),
+        "special_note": business.get("special_note"),
+        "society": location.get("society"),
+        "local_area": location.get("local_area"),
+        "city": location.get("city"),
+        "state": location.get("state"),
+        "country": location.get("country"),
+        "pincode": location.get("pincode"),
+        "research_results": {},
+        "section_reports": {},
+        "errors": [],
+    }
 
 
-def build_initial_state() -> Dict[str, Any]:
-    """Build the initial pipeline state from configuration."""
-    
-    business_case = config_loader.get(
-        "business_case.default",
-        {},
+def print_section(title: str) -> None:
+    print("\n" + "=" * 60)
+    print(title)
+    print("=" * 60)
+
+
+def main():
+    """Run the complete pipeline."""
+    print("🚀 Starting pipeline...")
+
+    # Step 1: Build initial state
+    state = build_state()
+
+    # Step 2: Run Research Workflow
+    print_section("📊 RESEARCH WORKFLOW")
+    research = ResearchWorkflow()
+    state = research.run(state)
+
+    research_results = state.get("research_results", {})
+    total_evidence = sum(
+        len(r.get("evidence", [])) for r in research_results.values()
     )
+    print(f"✅ Research completed: {total_evidence} evidence items")
 
-    if not isinstance(
-        business_case,
-        dict,
-    ):
-        raise ValueError(
-            "business_case.default must be a dictionary"
-        )
+    # Step 3: Run Report Workflow
+    print_section("📄 REPORT WORKFLOW")
+    report = ReportWorkflow()
+    state = report.run(state)
 
-    # Start with empty state
-    state: Dict[str, Any] = {}
+    report_results = state.get("section_reports", {})
+    final_report = report_results.get("final_compilation", {})
+    print(f"✅ Report completed: {len(report_results)} sections")
 
-    # Copy top-level fields
-    for key, value in business_case.items():
-        if key == "location":
-            # Flatten location into top-level fields
-            if isinstance(value, dict):
-                for loc_key, loc_value in value.items():
-                    if not isinstance(loc_value, (dict, list, tuple, set)):
-                        state[loc_key] = loc_value
-                        print(f"  📍 Flattened location: {loc_key} = {loc_value}")
-        elif not isinstance(value, (dict, list, tuple, set)):
-            state[key] = value
-            print(f"  📍 Added top-level: {key} = {value}")
+    # Step 4: Export report
+    print_section("💾 EXPORTING REPORT")
+    report_content = final_report.get("report", "No report generated")
+    files = export_report(report_content, dict(state))
+    for fmt, path in files.items():
+        print(f"✅ {fmt.upper()}: {path}")
 
-    # Add workflow metadata
-    state["workflow_id"] = str(uuid.uuid4())
-    state["started_at"] = datetime.now().isoformat()
+    # Step 5: Print final report preview
+    print_section("📋 FINAL REPORT PREVIEW")
+    preview = report_content[:500] + "..." if len(report_content) > 500 else report_content
+    print(preview)
 
-    print(f"\n📋 Final state keys: {list(state.keys())}")
-    print(f"📋 city: {state.get('city')}")
-    print(f"📋 local_area: {state.get('local_area')}")
-    print()
-
-    return state
-
-
-def run_pipeline() -> Dict[str, Any]:
-    """
-    Execute the configured research pipeline.
-    """
-
-    logger.info("Pipeline execution started")
-
-    state = build_initial_state()
-
-    # The orchestrator accepts Dict[str, Any] but the type hint says WorkflowState
-    # This is safe because WorkflowState is a TypedDict of Dict[str, Any]
-    result = research_orchestrator.run(state)  # type: ignore
-
-    logger.info(
-        "Pipeline execution completed | status=%s",
-        result.get("status"),
-    )
-
-    return result
-
-
-def main() -> None:
-    """Run the pipeline from the command line."""
-
-    result = run_pipeline()
-
-    status = result.get(
-        "status",
-        "failed",
-    )
-
-    print(f"\nPipeline status: {status}")
-
-    research_results = result.get("research_results", {})
-    if research_results:
-        completed = [
-            name for name, res in research_results.items()
-            if isinstance(res, dict) and res.get("status") == "success"
-        ]
-        failed = [
-            name for name, res in research_results.items()
-            if isinstance(res, dict) and res.get("status") == "failed"
-        ]
-        print(f"Sections: {len(completed)} completed, {len(failed)} failed")
+    print_section("✅ PIPELINE COMPLETED")
+    print(f"Total sections: {len(report_results)}")
+    print(f"Total evidence: {total_evidence}")
 
 
 if __name__ == "__main__":

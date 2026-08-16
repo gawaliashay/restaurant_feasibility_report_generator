@@ -1,3 +1,5 @@
+# src\common\model_loader.py
+
 """
 Central model loader for LLMs and Embeddings.
 

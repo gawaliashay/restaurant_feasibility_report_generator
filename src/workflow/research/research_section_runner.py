@@ -17,7 +17,7 @@ from src.common.tools.tool_pipeline import run_tool
 from src.configuration.config_loader import config_loader
 from src.logging_exception.exception.custom_exception import CustomException
 from src.logging_exception.logging.logger import logger
-from src.workflow.research.evidence_processor import EvidenceProcessor
+from src.common.tools.evidence_processor import EvidenceProcessor
 from src.graph_states.workflow_states import WorkflowState
 
 

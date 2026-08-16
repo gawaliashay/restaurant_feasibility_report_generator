@@ -1,5 +1,3 @@
-# src\common\tools\clients\rag_client.py
-
 """
 RAG (Retrieval-Augmented Generation) client.
 """
@@ -9,7 +7,7 @@ from typing import Any
 
 from src.configuration.config_loader import config_loader
 from src.rag.rag_pipeline import get_rag_pipeline
-from .query_normalizer import normalize_query
+from ..query_normalizer import normalize_query
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +41,10 @@ def rag_search(search_query: str | list[str]) -> dict[str, Any]:
             {
                 "text": chunk.text,
                 "score": chunk.score,
-                "metadata": chunk.metadata,
+                "metadata": {
+                    "document_name": chunk.metadata.get("document_name"),
+                    "chunk_index": chunk.metadata.get("chunk_index"),
+                } if chunk.metadata else {},
             }
             for chunk in chunks
         ]
