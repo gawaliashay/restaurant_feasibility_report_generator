@@ -243,10 +243,8 @@ tools:
 # ============================================================
 
 defaults:
-  primary_llm: groq
-  fast_llm: groq
-  creative_llm: groq
-  analysis_llm: openai
+   fast_llm: groq
+   analysis_llm: openai
 
 models:
   llms:
