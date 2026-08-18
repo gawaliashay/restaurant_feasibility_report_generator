@@ -15,7 +15,7 @@ from src.configuration.config_loader import config_loader
 # FIELD DEFINITIONS
 # ============================================================
 
-CONTENT_FIELDS = ["content", "text", "snippet", "description", "title", "name"]
+CONTENT_FIELDS = ["content", "text", "snippet", "description", "title", "name", "rating", "reviews", "price"]
 TITLE_FIELDS = ["title", "name"]
 URL_FIELDS = ["url", "link", "website"]
 SOURCE_FIELDS = ["source", "source_name", "type", "category"]

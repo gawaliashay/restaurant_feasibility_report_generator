@@ -69,8 +69,7 @@ research:
         - tavily_search
       queries:
         google_trends:
-          - "momo"
-          - "momo restaurant"
+          - "{restaurant_concept}"
         tavily_search:
           - "{restaurant_concept} market demand trends {city} India"
           - "{restaurant_concept} consumer preferences dining trends {city} India"
@@ -87,7 +86,7 @@ research:
           - "{restaurant_concept} in {local_area}, {city}"
         tavily_search:
           - "{restaurant_concept} competitors {local_area} {city} pricing menu"
-          - "{restaurant_concept} reviews positioning {local_area} {city}"
+          - "{restaurant_concept} competitors market positioning {local_area} {city}"
 
     location_analysis:
       enabled: true
@@ -112,8 +111,7 @@ research:
       queries:
         tavily_search:
           - "{local_area} {city} population, income and demographics"
-          - "{local_area} {city} consumer spending dining habits"
-          - "{local_area} {city} food preferences restaurant trends"
+          - "{local_area} {city} consumer spending dining habits food preferences"
 
     compliance_requirements:
       enabled: true
@@ -253,14 +251,14 @@ models:
       import_path: langchain_groq.ChatGroq
       api_key: ${GROQ_API_KEY}
       temperature: 0.3
-      max_tokens: 512
+      max_tokens: 1024
 
     openai:
       model_name: gpt-4o-mini
       import_path: langchain_openai.ChatOpenAI
       api_key: ${OPENAI_API_KEY}
       temperature: 0.3
-      max_tokens: 512
+      max_tokens: 1024
 
 
 # ============================================================

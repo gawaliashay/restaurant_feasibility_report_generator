@@ -60,14 +60,33 @@ class ReportSectionRunner:
             return {"section": section_name, "status": "failed", "report": "", "error": str(e)}
 
     def _build_prompt(self, prompt_name: str, state: WorkflowState) -> str:
-        """Build prompt with context and evidence."""
         template = prompts_loader.get_prompt("reporting", prompt_name)
-
-        # Get evidence: prompt_name → research_section
-        research_section = prompt_name.replace("_prompt", "")
         research_results = state.get("research_results", {})
-        evidence = research_results.get(research_section, {}).get("evidence", [])
-
+        
+        # Map prompt → research section
+        prompt_to_research = {
+            "market_analysis_prompt": "market_analysis",
+            "competitive_analysis_prompt": "competitive_analysis",
+            "location_analysis_prompt": "location_analysis",
+            "customer_demographics_prompt": "customer_demographics",
+            "compliance_requirements_prompt": "compliance_requirements",
+            "risk_assessment_prompt": None,
+            "strategic_recommendations_prompt": None,
+        }
+        
+        # Cross-section prompts get ALL evidence
+        if prompt_name in ["risk_assessment_prompt", "strategic_recommendations_prompt"]:
+            all_evidence = []
+            for section in ["market_analysis", "competitive_analysis", "location_analysis", 
+                        "customer_demographics", "compliance_requirements"]:
+                all_evidence.extend(research_results.get(section, {}).get("evidence", []))
+            formatted_evidence = self._format_evidence(all_evidence)
+        else:
+            # ✅ FIX: Get the research section name, default to empty string
+            research_section = prompt_to_research.get(prompt_name, "")
+            evidence = research_results.get(research_section, {}).get("evidence", []) if research_section else []
+            formatted_evidence = self._format_evidence(evidence)
+        
         context = {
             "restaurant_concept": state.get("restaurant_concept", ""),
             "investment": state.get("investment", ""),
@@ -76,35 +95,36 @@ class ReportSectionRunner:
             "city": state.get("city", ""),
             "state": state.get("state", ""),
             "country": state.get("country", ""),
-            "section_insights": self._format_evidence(evidence),
+            "section_insights": formatted_evidence,
             "common_rules": prompts_loader.get_prompt("reporting", "common_rules", ""),
         }
-
+        
         return template.format(**context)
 
     def _format_evidence(self, evidence: list) -> str:
-        """Format evidence for LLM prompt."""
+        """Format evidence for LLM prompt using config settings."""
         if not evidence:
             return "No evidence available."
-
+        
+        # Get limits from config (just 2 lines!)
+        quality_mode = config_loader.get("report_quality.mode", "balanced")
+        max_items = config_loader.get(f"report_quality.{quality_mode}.max_tool_results_per_section", 12)
+        max_chars = config_loader.get(f"report_quality.{quality_mode}.max_evidence_chars_per_section", 3000)
+        
         lines = []
-        for i, item in enumerate(evidence[:30], 1):
+        # Use config values instead of hardcoded 30 and 500
+        for i, item in enumerate(evidence[:max_items], 1):  # ✅ Uses config
             source = item.get("source", "Unknown")
             title = item.get("title", "")
             content = item.get("content", "")
-            extra = item.get("extra", {})
-
+            
             lines.append(f"[{i}] {source}")
             if title:
                 lines.append(f"    {title}")
             if content:
-                lines.append(f"    {content[:500]}")
-            if extra:
-                extra_str = ", ".join([f"{k}: {v}" for k, v in extra.items() if v])
-                if extra_str:
-                    lines.append(f"    {extra_str}")
+                lines.append(f"    {content[:max_chars]}")  # ✅ Uses config
             lines.append("")
-
+        
         return "\n".join(lines)
 
     def _get_text(self, response: Any) -> str:

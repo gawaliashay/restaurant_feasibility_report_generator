@@ -22,7 +22,7 @@ reporting:
     INCOMPLETE DATA RULES:
     - If data is incomplete, say it once: "Price data available for 8 out of 10 competitors."
     - Do NOT repeat "Not available" for every field.
-    - Group missing information in the "Data Limitations" section.
+    - Group missing information in the "Data Limitations" section in short.
     - If you see "Note:" in the insights, use that information.
 
     FORMATTING RULES:
@@ -46,7 +46,7 @@ reporting:
   # ==========================================================
 
   market_analysis_prompt: |
-    You are a restaurant market research analyst.
+    You are a restaurant market research analyst synthesizing evidence from multiple sources.
 
     Restaurant Concept: {restaurant_concept}
     Location: {local_area}, {city}, {state}
@@ -57,33 +57,38 @@ reporting:
 
     {common_rules}
 
-    Generate ONLY these sections. Do not add extra sections.
+    CRITICAL INSTRUCTION: 
+    - You have data from Google Trends, Tavily Search, and other tools.
+    - Look for numerical data, trends, and market size information.
+    - If multiple sources mention similar trends, combine them.
+    - For Google Trends data, mention specific scores and time periods.
+
+    Generate these sections:
 
     ## Market Overview
-    Summarize what the market signals indicate:
-    - Is there demand for this concept?
-    - What is the overall market sentiment?
-    - What trends are visible?
+    - What does Google Trends data show?
+    - What is the market size or growth rate mentioned in evidence?
+    - What is the overall demand signal for this concept?
 
     ## Customer Demand Signals
-    What tells you customers want this?
-    - Demand indicators from evidence
-    - Consumer preferences observed
-    - Trend observations
+    - What consumer preferences are mentioned?
+    - What dining trends are evident from the evidence?
+    - Are there specific demographic groups showing interest?
 
     ## Business Implications
-    What does this mean for a restaurant owner?
-    - Should they proceed?
-    - What's the opportunity?
-    - What risks exist?
+    - Should the owner proceed? Why or why not?
+    - What's the revenue potential based on evidence?
+    - What are the key risks?
 
     ## Data Limitations
-    What information is missing or incomplete?
+    - List what's missing from the market data.
 
     ## Evidence Gaps
-    What additional information would help?
+    - What 3-5 specific pieces of information would strengthen this analysis?
 
-  # ==========================================================
+    CITE SPECIFIC SOURCES after each section.
+
+# ==========================================================
 # COMPETITIVE ANALYSIS PROMPT
 # ==========================================================
 
@@ -98,34 +103,50 @@ reporting:
 
     {common_rules}
 
-    Generate ONLY these sections. Do not add extra sections.
+    CRITICAL INSTRUCTIONS:
+    - Use ALL competitor data from Google Maps and Tavily Search
+    - Extract ratings, reviews, price points, and service types
+    - Identify patterns and gaps
+    - Include specific numbers from evidence
+
+    Generate these sections:
 
     ## Competitor Landscape
-    List competitors found in evidence:
+    Provide a markdown table with ALL competitors found:
+    
+    | Name | Category | Rating | Reviews | Price (for two) | Services |
+    |------|----------|--------|---------|-----------------|----------|
+    
+    Fill with exact data from evidence. If data is missing, leave the cell blank.
+    
+    After the table, provide a brief paragraph summarizing:
+    - Total competitors found
+    - Most common service types
+    - Any notable competitors
 
-    | Name | Category | Rating | Reviews | Price |
-    |------|----------|--------|---------|-------|
-    | ...  | ...      | ...    | ...     | ...   | 
-
-    ## Pricing Position
-    Analyze observed pricing patterns:
-    - What price points exist?
-    - Where are the gaps?
-    - What does this mean for positioning?
+    ## Market Positioning Analysis
+    - What pricing tiers exist? (Budget, Mid-range, Premium)
+    - How many competitors in each tier?
+    - What service types are common?
 
     ## Competitive Strengths
-    What patterns emerge from existing competitors?
-    - What makes them successful?
-    - What can be learned?
+    - What makes top-rated competitors successful?
+    - What patterns in reviews indicate success factors?
 
     ## Market Gaps
-    What opportunities are not being served?
-    - Price gaps
-    - Cuisine gaps
-    - Service gaps
+    - Price gaps: What price points are underserved?
+    - Cuisine gaps: What offerings are missing?
+    - Service gaps: What service types are missing?
+
+    ## Strategic Recommendations Based on Competition
+    - Where should this restaurant position itself?
+    - What should be the price point?
+    - What unique offering can differentiate it?
 
     ## Data Limitations
-    What competitor information is not available?
+    What competitor information is missing.
+
+    CITE SOURCES using the format: "Sources: google_maps, tavily_search"
 
   # ==========================================================
   # CUSTOMER DEMOGRAPHICS PROMPT
@@ -168,7 +189,7 @@ reporting:
     - What are the operating hours?
 
     ## Data Limitations
-    What demographic information is not available?
+    What demographic information is not available.
 
   # ==========================================================
   # LOCATION ANALYSIS PORMPT
@@ -210,7 +231,7 @@ reporting:
     - Suitability for restaurant
 
     ## Data Limitations
-    What location data is unavailable?
+    What location data is unavailable.
 
   # ==========================================================
   # COMPLIANCE REQUIREMENTS PORMPT
@@ -227,101 +248,110 @@ reporting:
 
     {common_rules}
 
-    Generate ONLY these sections. Do not add extra sections.
+    CRITICAL INSTRUCTIONS:
+    - Extract SPECIFIC details from RAG evidence
+    - Include costs, timelines, prerequisites
+    - List exact penalty amounts from evidence
+    - Group related requirements
+
+    Generate these sections:
 
     ## Required Licenses and Permits
-    List all licenses and permits mentioned in the evidence with details:
-    - License/permit name
+    For each license mentioned in evidence:
+    - Name of license
     - Issuing authority
-    - Cost (if mentioned)
-    - Timeline (if mentioned)
-    - Validity period (if mentioned)
-    - Prerequisites (if mentioned)
+    - Cost (ONLY if mentioned in evidence - omit if missing)
+    - Timeline (ONLY if mentioned - omit if missing)
+    - Prerequisites (ONLY if mentioned - omit if missing)
+    - Validity period (ONLY if mentioned - omit if missing)
+
+    IMPORTANT: Do NOT write "Not specified" or "N/A" for missing fields. Just omit the field entirely.
 
     ## Operational Compliance
-    List operational requirements mentioned in the evidence:
-    - **Working Hours**: Daily and weekly limits
-    - **Staff Requirements**: Hiring, verification, training
-    - **Health and Safety**: Inspections, hygiene, food safety
-    - **Reporting**: Change reporting, renewals, notifications
+    - Working hours restrictions (with specific times)
+    - Staff requirements (with specific ratios)
+    - Health and safety requirements
+    - Reporting and renewal requirements
 
     ## Penalties and Fines
-    List penalties mentioned in the evidence:
+    For each violation mentioned:
     - Violation type
-    - Penalty amount
-    - Imprisonment (if mentioned)
-    - Authority that enforces
+    - Penalty amount (exact number if provided)
+    - Consequence
 
-    ## Authorities Mentioned
-    List all regulatory bodies and their roles.
+    ## Regulatory Authorities
+    - List all authorities and their jurisdictions
 
-    ## Compliance Checklist
-    Provide practical, actionable steps:
-    - Step with timeline
-    - Responsible authority
-    - Frequency (one-time, annual, etc.)
+    ## Compliance Timeline
+    | Step | Timeline | Authority | Cost |
+    |------|----------|-----------|------|
+
+    ## Compliance Checklist for Owner
+    Actionable checklist with specific steps
 
     ## Data Limitations
-    - What compliance information is missing?
+    What compliance information is not available.
 
-    Never invent license names, fees, or authorities.
+    CITE SOURCES: "Sources: [1], [2], [3]" using the RAG source numbering.
 
   # ==========================================================
   # RISK ASSESSMENT PROMPT
   # ==========================================================
 
   risk_assessment_prompt: |
-    You are a risk analyst helping a restaurant owner identify potential risks.
+    You are a risk analyst synthesizing across ALL research sections.
 
     Business Context:
     Concept: {restaurant_concept}
     Location: {local_area}, {city}
+    Investment: {investment}
 
-    Research Insights from all previous sections:
+    ALL Research Evidence:
     {section_insights}
+
 
     {common_rules}
 
-    Generate ONLY these sections. Do not add extra sections.
+    CRITICAL INSTRUCTIONS:
+    - Pull evidence from ALL sections, not just one
+    - If a section has no evidence, say "Based on available evidence, no specific risks identified in this category"
+    - Only include risks that can be traced to specific evidence
+
+    Generate these sections with risk descriptions:
 
     ## Market Risks
-    From Market Analysis and Competitive Analysis:
-    - What competitive threats exist?
-    - Is the market saturated?
-    - Based on available evidence
+    Based on Market Analysis and Competitive Analysis:
+    - What competitive threats exist? (Use competitor count from evidence)
+    - Is there market saturation? (What does evidence say?)
+    - For each risk: Description, Evidence, Severity (High/Medium/Low), Mitigation
 
     ## Location Risks
-    From Location Analysis:
-    - Accessibility issues?
-    - Footfall concerns?
-    - Based on available evidence
+    Based on Location Analysis:
+    - Accessibility concerns
+    - Footfall issues
+    - Surrounding area challenges
 
     ## Operational Risks
-    From Compliance and Demographics:
-    - Regulatory compliance risks
-    - Staffing risks
-    - Target audience mismatch
-    - Based on available evidence
+    Based on Compliance Requirements:
+    - Regulatory compliance challenges
+    - Staffing requirements mentioned
+    - Health and safety requirements
 
     ## Financial Risks
-    From Investment and compliance:
-    - Is the investment adequate?
-    - Hidden costs mentioned?
-    - Based on available evidence
-
-    For each risk include:
-    - Risk description
-    - Specific evidence
-    - Severity: High/Medium/Low
-    - Practical mitigation
+    Based on investment and evidence:
+    - Cost implications from compliance
+    - Pricing pressure from competition
+    - Hidden costs mentioned
 
     ## Unknown Risks
-    What cannot be evaluated without more data?
+    What cannot be assessed due to missing data?
 
-    Every risk must trace to specific evidence.
+    ## Overall Risk Summary
+    High risks: [List]
+    Medium risks: [List]
+    Low risks: [List]
 
-    ## Data Limitations
-    What missing information could hide additional risks?
+    CITE SPECIFIC SOURCES for each risk.
 
   # ==========================================================
   # STRATEGIC RECOMMENDATIONS PROMPT
@@ -365,7 +395,7 @@ reporting:
     - Key risks to watch
 
     ## Data Limitations
-    What additional information would strengthen these recommendations?
+    What additional information would strengthen these recommendations.
 
     Avoid unsupported assumptions.
 
@@ -374,7 +404,6 @@ reporting:
 # ============================================================
 
   final_report_prompt:
-
     executive_summary: |
       You are preparing an executive summary for a restaurant feasibility report.
 
