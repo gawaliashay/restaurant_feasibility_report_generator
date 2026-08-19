@@ -21,8 +21,13 @@ class ReportCompiler:
 
         # Count total evidence
         total = 0
-        sections = ["market_analysis", "competitive_analysis", "location_analysis", 
-                   "customer_demographics", "compliance_requirements"]
+        sections = [
+            "market_analysis",
+            "competitive_analysis",
+            "location_analysis",
+            "customer_demographics",
+            "compliance_requirements",
+        ]
         for section in sections:
             total += len(research.get(section, {}).get("evidence", []))
 
@@ -48,27 +53,27 @@ class ReportCompiler:
             f"**Investment:** {state.get('investment', '')}",
             f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
             "",
-            "---"
+            "---",
         ])
 
     def _summary(self, state: dict, total: int, reports: dict) -> str:
         """Generate executive summary."""
-        lines = []
-        lines.append("## Executive Summary")
-        lines.append("")
-        lines.append(f"Report for **{state.get('restaurant_concept', '')}** in **{state.get('local_area', '')}, {state.get('city', '')}**.")
-        lines.append(f"**Total Evidence:** {total} items.")
-        lines.append("")
-        
-        # Map report keys to display names
+        lines = [
+            "## Executive Summary",
+            "",
+            f"**{state.get('restaurant_concept', '')}** in "
+            f"**{state.get('local_area', '')}, {state.get('city', '')}** — {total} evidence items.",
+            "",
+        ]
+
         section_map = {
             "market_report": "Market",
             "competitive_report": "Competition",
             "location_report": "Location",
             "demographics_report": "Demographics",
-            "compliance_report": "Compliance"
+            "compliance_report": "Compliance",
         }
-        
+
         for key, title in section_map.items():
             result = reports.get(key, {})
             if result.get("status") == "success":
@@ -77,36 +82,59 @@ class ReportCompiler:
                     summary = self._get_first_sentence(report_text)
                     if summary:
                         lines.append(f"- **{title}:** {summary}")
-        
-        lines.append("")
-        lines.append("---")
+
+        lines.extend(["", "---"])
         return "\n".join(lines)
 
-    def _get_first_sentence(self, text: str, max_length: int = 120) -> str:
-        """Extract first meaningful sentence from text."""
+    def _get_first_sentence(self, text: str) -> str:
+        """Extract first meaningful line from section text."""
+        skip_starts = (
+            "the google trends data",
+            "the analysis of google trends",
+            "most common service",
+        )
+
+        candidates = []
         for line in text.split("\n"):
             clean = line.strip()
-            
-            # Skip empty lines
             if not clean:
                 continue
-            
-            # Skip headings, tables, bullet lists, sources, and question headers
-            if clean.startswith(("#", "|", "-")):
+            if clean.startswith("- "):
+                clean = clean[2:].strip()
+            if clean.startswith(("#", "|")):
+                continue
+            if clean.startswith("**") and clean.endswith(":"):
                 continue
             if clean.lower().startswith("sources:"):
                 continue
-            if clean.endswith("?") and len(clean) < 50:
+            if any(clean.lower().startswith(s) for s in skip_starts):
                 continue
-            
-            # Found real content
-            if len(clean) > 10:
-                return clean[:max_length] + "..." if len(clean) > max_length else clean
-        
+            if len(clean) <= 10:
+                continue
+            candidates.append(clean)
+
+        for clean in candidates:
+            lower = clean.lower()
+            if (
+                lower.startswith("overall")
+                or "notable competitors" in lower
+                or "this trend indicates" in lower
+            ):
+                return self._first_sentence(clean)
+
+        if candidates:
+            return self._first_sentence(candidates[0])
+
         return ""
 
+    def _first_sentence(self, text: str) -> str:
+        """Trim text to its first sentence only."""
+        idx = text.find(". ")
+        if idx != -1 and idx > 20:
+            return text[:idx + 1]
+        return text
+
     def _sections(self, reports: dict) -> str:
-        """Generate main report sections."""
         section_map = {
             "market_report": "Market Analysis",
             "competitive_report": "Competitive Analysis",
@@ -116,70 +144,84 @@ class ReportCompiler:
         }
 
         parts = []
-        for key, title in section_map.items():
+        for key in section_map:
             result = reports.get(key, {})
             if result.get("status") == "success":
                 report_text = result.get("report", "")
                 if report_text:
-                    parts.append(f"## {title}\n{report_text}\n---")
-        
+                    parts.append(f"{report_text}\n\n---")
+
         return "\n".join(parts)
 
     def _risk(self, reports: dict) -> str:
-        """Generate risk assessment section."""
         result = reports.get("risk_assessment", {})
         if result.get("status") == "success":
             report_text = result.get("report", "")
             if report_text:
-                return f"## Risk Assessment\n\n{report_text}\n\n---"
+                return f"{report_text}\n\n---"
         return ""
 
     def _recommendations(self, reports: dict) -> str:
-        """Generate recommendations section."""
         result = reports.get("strategic_recommendations", {})
         if result.get("status") == "success":
             report_text = result.get("report", "")
             if report_text:
-                return f"## Strategic Recommendations\n\n{report_text}\n\n---"
+                return f"{report_text}\n\n---"
         return ""
 
     def _conclusion(self, state: dict, total: int, reports: dict) -> str:
         """Generate conclusion."""
-        lines = []
-        lines.append("## Conclusion")
-        lines.append("")
-        lines.append(f"Assessment based on {total} evidence items for **{state.get('restaurant_concept', '')}**.")
-        lines.append("")
-        
-        # Extract recommendations
+        lines = [
+            "## Conclusion",
+            "",
+            f"Assessment based on {total} evidence items for "
+            f"**{state.get('restaurant_concept', '')}** "
+            f"in **{state.get('local_area', '')}, {state.get('city', '')}** "
+            f"with an investment of **{state.get('investment', '')}**.",
+            "",
+        ]
+
+        # Risk summary from risk section
+        risk_result = reports.get("risk_assessment", {})
+        if risk_result.get("status") == "success":
+            risk_text = risk_result.get("report", "")
+            for line in risk_text.split("\n"):
+                clean = line.strip()
+                lower = clean.lower()
+                if "high risks" in lower or "medium risks" in lower or "low risks" in lower:
+                    if "high risks" in lower:
+                        lines.append("**Risk Overview:**")
+                    lines.append(clean)
+            lines.append("")
+
+        # Recommendations from strategic section
         rec_result = reports.get("strategic_recommendations", {})
         if rec_result.get("status") == "success":
             rec_text = rec_result.get("report", "")
             lines.append("**Key Recommendations:**")
-            
-            count = 0
-            keywords = ["price", "position", "target", "menu", "marketing"]
-            
+
+            found = False
             for line in rec_text.split("\n"):
-                if count >= 3:
-                    break
-                
-                clean = line.strip()
-                if not clean or len(clean) <= 10 or clean.startswith("#"):
+                raw = line.strip()
+                if not raw or raw.startswith("#") or raw.startswith("*Sources"):
                     continue
-                
-                if any(word in clean.lower() for word in keywords):
-                    lines.append(f"- {clean[:100]}...")
-                    count += 1
-            
-            if count == 0:
-                lines.append("- See Strategic Recommendations section for details.")
-        else:
-            lines.append("**Recommendation:** Review all sections carefully.")
-        
-        lines.append("")
-        lines.append("---")
-        lines.append("")
-        lines.append("*Report generated automatically*")
-        
+                if raw.startswith("- "):
+                    lines.append(f"- {raw[2:].strip()}")
+                    found = True
+                elif raw[0].isdigit() and ". " in raw[:5]:
+                    lines.append(raw)
+                    found = True
+
+                if not found:
+                    lines.append("- See Strategic Recommendations section for details.")
+            else:
+                lines.append("**Recommendation:** Review all sections carefully.")
+
+        lines.extend([
+            "",
+            "---",
+            "",
+            "*Report generated by AI*",
+        ])
+
         return "\n".join(lines)

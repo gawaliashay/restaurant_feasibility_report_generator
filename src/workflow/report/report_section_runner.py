@@ -74,13 +74,22 @@ class ReportSectionRunner:
             "strategic_recommendations_prompt": None,
         }
         
-        # Cross-section prompts get ALL evidence
+        # Cross-section prompts get ALL evidence (distributed evenly across sections)
         if prompt_name in ["risk_assessment_prompt", "strategic_recommendations_prompt"]:
+            sections_list = ["market_analysis", "competitive_analysis", "location_analysis", 
+                        "customer_demographics", "compliance_requirements"]
+            section_evidence = {}
+            for section in sections_list:
+                section_evidence[section] = research_results.get(section, {}).get("evidence", [])
+
+            quality_mode = config_loader.get("report_quality.mode", "balanced")
+            max_items = config_loader.get(f"report_quality.{quality_mode}.max_tool_results_cross_section", 35)
+            per_section = max(1, max_items // len(sections_list))
             all_evidence = []
-            for section in ["market_analysis", "competitive_analysis", "location_analysis", 
-                        "customer_demographics", "compliance_requirements"]:
-                all_evidence.extend(research_results.get(section, {}).get("evidence", []))
-            formatted_evidence = self._format_evidence(all_evidence)
+            for section in sections_list:
+                all_evidence.extend(section_evidence[section][:per_section])
+            formatted_evidence = self._format_evidence(all_evidence, cross_section=True)
+
         else:
             # ✅ FIX: Get the research section name, default to empty string
             research_section = prompt_to_research.get(prompt_name, "")
@@ -101,30 +110,40 @@ class ReportSectionRunner:
         
         return template.format(**context)
 
-    def _format_evidence(self, evidence: list) -> str:
-        """Format evidence for LLM prompt using config settings."""
+    def _format_evidence(self, evidence: list, cross_section: bool = False) -> str:
         if not evidence:
             return "No evidence available."
-        
-        # Get limits from config (just 2 lines!)
+
         quality_mode = config_loader.get("report_quality.mode", "balanced")
-        max_items = config_loader.get(f"report_quality.{quality_mode}.max_tool_results_per_section", 12)
-        max_chars = config_loader.get(f"report_quality.{quality_mode}.max_evidence_chars_per_section", 3000)
-        
+        key = f"report_quality.{quality_mode}"
+
+        if cross_section:
+            max_items = config_loader.get(f"{key}.max_tool_results_cross_section", 35)
+        else:
+            max_items = config_loader.get(f"{key}.max_tool_results_per_section", 12)
+
+        max_chars = config_loader.get("research.limits.max_text_per_result", 300)
+
         lines = []
-        # Use config values instead of hardcoded 30 and 500
-        for i, item in enumerate(evidence[:max_items], 1):  # ✅ Uses config
-            source = item.get("source", "Unknown")
+        for item in evidence[:max_items]:
+            source = item.get("source") or item.get("tool", "Unknown")
             title = item.get("title", "")
             content = item.get("content", "")
-            
-            lines.append(f"[{i}] {source}")
+            extra = item.get("extra") or {}
+
+            lines.append(f"Source: {source}")
             if title:
-                lines.append(f"    {title}")
+                lines.append(f"    Title: {title}")
             if content:
-                lines.append(f"    {content[:max_chars]}")  # ✅ Uses config
+                lines.append(f"    {content[:max_chars]}")
+            if extra:
+                extra_text = " | ".join(
+                    f"{k}: {v}" for k, v in extra.items() if v not in (None, "")
+                )
+                if extra_text:
+                    lines.append(f"    {extra_text}")
             lines.append("")
-        
+
         return "\n".join(lines)
 
     def _get_text(self, response: Any) -> str:

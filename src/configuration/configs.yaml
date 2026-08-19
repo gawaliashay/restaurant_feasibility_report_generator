@@ -131,8 +131,8 @@ research:
 # ============================================================
   limits:
   
-  max_evidence_chars: 2000
-  max_text_per_result: 300
+    max_evidence_chars: 2000
+    max_text_per_result: 300
 
 # ============================================================
 # REPORT - Analysis & Synthesis
@@ -189,7 +189,7 @@ report:
         - risk_assessment
 
     final_compilation:
-      enabled: true
+      enabled: false
       title: Complete Research Report
       dependencies:
         - market_report
@@ -251,14 +251,14 @@ models:
       import_path: langchain_groq.ChatGroq
       api_key: ${GROQ_API_KEY}
       temperature: 0.3
-      max_tokens: 1024
+      max_tokens: 2048
 
     openai:
       model_name: gpt-4o-mini
       import_path: langchain_openai.ChatOpenAI
       api_key: ${OPENAI_API_KEY}
       temperature: 0.3
-      max_tokens: 1024
+      max_tokens: 2048
 
 
 # ============================================================
@@ -306,6 +306,7 @@ report_quality:
   fast:
     max_evidence_chars_per_section: 2000
     max_tool_results_per_section: 10
+    max_tool_results_cross_section: 25
     max_chars_per_rag_chunk: 300
     max_rag_chunks_per_section: 4
     max_summary_chars_for_sections: 500
@@ -316,6 +317,7 @@ report_quality:
   balanced:
     max_evidence_chars_per_section: 3000
     max_tool_results_per_section: 12
+    max_tool_results_cross_section: 35
     max_chars_per_rag_chunk: 400
     max_rag_chunks_per_section: 5
     max_summary_chars_for_sections: 600
@@ -326,6 +328,7 @@ report_quality:
   quality:
     max_evidence_chars_per_section: 4000
     max_tool_results_per_section: 15
+    max_tool_results_cross_section: 50
     max_chars_per_rag_chunk: 500
     max_rag_chunks_per_section: 4
     max_summary_chars_for_sections: 800

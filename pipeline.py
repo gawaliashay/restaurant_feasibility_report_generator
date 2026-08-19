@@ -6,8 +6,10 @@ Executes both research and report workflows.
 from src.graph_states.workflow_states import WorkflowState
 from src.workflow.research.research_workflow import ResearchWorkflow
 from src.workflow.report.report_workflow import ReportWorkflow
+from src.workflow.report.report_compiler import ReportCompiler
 from src.workflow.report.report_exporter import export_report
 from src.configuration.config_loader import config_loader
+
 
 
 def build_state() -> WorkflowState:
@@ -61,6 +63,14 @@ def main():
     report = ReportWorkflow()
     state = report.run(state)
 
+    compiler = ReportCompiler()
+    final_report = compiler.compile(dict(state))
+    state["section_reports"]["final_compilation"] = {
+        "section": "final_compilation",
+        "status": "success",
+        "report": final_report,
+    }
+
     report_results = state.get("section_reports", {})
     final_report = report_results.get("final_compilation", {})
     print(f"✅ Report completed: {len(report_results)} sections")
@@ -71,11 +81,6 @@ def main():
     files = export_report(report_content, dict(state))
     for fmt, path in files.items():
         print(f"✅ {fmt.upper()}: {path}")
-
-    # Step 5: Print final report preview
-    print_section("📋 FINAL REPORT PREVIEW")
-    preview = report_content[:500] + "..." if len(report_content) > 500 else report_content
-    print(preview)
 
     print_section("✅ PIPELINE COMPLETED")
     print(f"Total sections: {len(report_results)}")

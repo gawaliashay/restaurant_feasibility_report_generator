@@ -69,35 +69,36 @@ class EvidenceProcessor:
         # Google Trends (values list)
         if "values" in item and isinstance(item["values"], list):
             parts = []
-
             for v in item["values"]:
                 if not isinstance(v, dict):
                     continue
-
                 query = v.get("query")
                 value = v.get("value")
-
                 if query and value:
                     parts.append(f"{query}: {value}")
-
             if parts:
                 return " | ".join(parts)
 
-        # Google Trends (single)
         if "query" in item and "value" in item:
             return f"{item['query']}: {item['value']}"
 
         if "date" in item and "value" in item:
             return f"{item['date']}: {item['value']}"
 
-        # Generic fields
+        primary = ""
         for field in CONTENT_FIELDS:
-            value = item.get(field)
+            if item.get(field):
+                primary = str(item[field]).strip()
+                break
 
-            if value:
-                return str(value).strip()
+        extra = self._get_extra(item)
+        if extra:
+            parts = [f"{k}: {v}" for k, v in extra.items() if v]
+            if parts:
+                suffix = " | ".join(parts)
+                primary = f"{primary} | {suffix}" if primary else suffix
 
-        return ""
+        return primary
 
     def _get_title(self, item: dict[str, Any]) -> str:
         """Extract a title from the raw result."""
@@ -132,11 +133,22 @@ class EvidenceProcessor:
 
     def _get_source(self, item: dict[str, Any], tool_name: str) -> str:
         """Extract source information."""
+        metadata = item.get("metadata", {})
+        if isinstance(metadata, dict) and metadata.get("document_name"):
+            return str(metadata["document_name"]).strip()
+
+        title = item.get("title") or item.get("name")
+        if title:
+            return str(title).strip()
+
         for field in SOURCE_FIELDS:
             value = item.get(field)
-
             if value:
                 return str(value).strip()
+
+        url = self._get_url(item)
+        if url:
+            return url
 
         if item.get("query"):
             return str(item["query"]).strip()

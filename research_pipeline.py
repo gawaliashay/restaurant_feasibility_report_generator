@@ -88,7 +88,7 @@ def save_json(results: dict) -> str:
     """Save results to JSON file."""
     import os
     
-    os.makedirs("reports", exist_ok=True)
+    os.makedirs("reports/processed_evidence/", exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"reports/processed_evidence/research_results_{timestamp}.json"
     
