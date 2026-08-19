@@ -9,8 +9,11 @@ import uuid
 import os
 from datetime import datetime
 
-from src.workflow.research_orchestrator import RestaurantResearchSystem
-from graph_states.workflow_states import WorkflowState
+from src.graph_states.workflow_states import WorkflowState
+from src.workflow.research.research_workflow import ResearchWorkflow
+from src.workflow.report.report_workflow import ReportWorkflow
+from src.workflow.report.report_compiler import ReportCompiler
+from src.workflow.report.report_exporter import export_report
 
 app = FastAPI(
     title="Restaurant Market Research API",
@@ -35,11 +38,15 @@ research_jobs = {}
 # Pydantic models
 class ResearchRequest(BaseModel):
     restaurant_concept: str
-    target_location: str
     investment: str
     target_demographic: str
-    max_analysts: int = 4
     special_note: str = ""
+    society: str = ""
+    local_area: str
+    city: str
+    state: str
+    pincode: str
+    country: str = "India"
 
 class ResearchResponse(BaseModel):
     report_id: str
@@ -86,7 +93,7 @@ async def start_research(request: ResearchRequest, background_tasks: BackgroundT
         "status": "queued",
         "progress": "0%",
         "current_stage": "Initializing",
-        "request": request.dict(),
+        "request": request.model_dump(),
         "created_at": datetime.now().isoformat(),
         "updated_at": datetime.now().isoformat(),
         "result": None,
@@ -179,75 +186,81 @@ async def get_available_formats(report_id: str):
     }
 
 # Background task function
-async def execute_research(report_id: str, request: ResearchRequest):
-    """Execute research in background"""
-    
+def execute_research(report_id: str, request: ResearchRequest):
+    """Execute research + report pipeline in background."""
+
     try:
-        # Update status
         research_jobs[report_id].update({
             "status": "in_progress",
             "progress": "10%",
-            "current_stage": "Creating analyst team",
-            "updated_at": datetime.now().isoformat()
+            "current_stage": "Building research state",
+            "updated_at": datetime.now().isoformat(),
         })
-        
-        # Initialize research system
-        system = RestaurantResearchSystem()
-        
-        # Create research state
-        research_state = WorkflowState(
-            restaurant_concept=request.restaurant_concept,
-            target_location=request.target_location,
-            investment=request.investment,
-            target_demographic=request.target_demographic,
-            max_analysts=request.max_analysts,
-            special_note=request.special_note,
-            # Initialize other required fields
-            dynamic_analysts=[],
-            analysts_team=[],
-            research_tasks=[],
-            research_results={},
-            research_summary={},
-            executive_summary="",
-            market_analysis="",
-            financial_recommendations="",
-            risk_assessment="",
-            final_report={},
-            export_paths={},
-            accept=False,
-            extra_instructions="",
-            retry_count=0,
-            current_task=None,
-            current_analyst=None
-        )
-        
-        # Update progress
+
+        research_state: WorkflowState = {
+            "restaurant_concept": request.restaurant_concept,
+            "investment": request.investment,
+            "target_demographic": request.target_demographic,
+            "special_note": request.special_note,
+            "society": request.society,
+            "local_area": request.local_area,
+            "city": request.city,
+            "state": request.state,
+            "pincode": request.pincode,
+            "country": request.country,
+            "research_results": {},
+            "section_reports": {},
+            "errors": [],
+        }
+
         research_jobs[report_id].update({
             "progress": "30%",
             "current_stage": "Conducting market research",
-            "updated_at": datetime.now().isoformat()
+            "updated_at": datetime.now().isoformat(),
         })
-        
-        # Execute research
-        result = system.run_research(research_state)
-        
-        # Update with results
+
+        state = ResearchWorkflow().run(research_state)
+
+        research_jobs[report_id].update({
+            "progress": "70%",
+            "current_stage": "Generating report sections",
+            "updated_at": datetime.now().isoformat(),
+        })
+
+        state = ReportWorkflow().run(state)
+
+        compiler = ReportCompiler()
+        final_report = compiler.compile(dict(state))
+        state["section_reports"]["final_compilation"] = {
+            "section": "final_compilation",
+            "status": "success",
+            "report": final_report,
+        }
+
+        research_jobs[report_id].update({
+            "progress": "90%",
+            "current_stage": "Exporting report",
+            "updated_at": datetime.now().isoformat(),
+        })
+
+        files = export_report(final_report, dict(state))
+        state["export_paths"] = files
+
         research_jobs[report_id].update({
             "status": "completed",
             "progress": "100%",
             "current_stage": "Report generation completed",
-            "result": result,
-            "updated_at": datetime.now().isoformat()
+            "result": dict(state),
+            "updated_at": datetime.now().isoformat(),
         })
-        
+
     except Exception as e:
-        # Update with error
         research_jobs[report_id].update({
             "status": "failed",
             "progress": "0%",
             "current_stage": "Error occurred",
             "error": str(e),
-            "updated_at": datetime.now().isoformat()
+            "updated_at": datetime.now().isoformat(),
         })
 
 # List all research jobs (admin endpoint)
