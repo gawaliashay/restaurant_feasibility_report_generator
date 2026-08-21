@@ -138,36 +138,42 @@ report:
       enabled: true
       title: Market Analysis Report
       prompt: market_analysis_prompt
+      research_section: market_analysis      # ← Add this
       dependencies: []
 
     competitive_report:
       enabled: true
       title: Competitive Analysis Report
       prompt: competitive_analysis_prompt
+      research_section: competitive_analysis
       dependencies: []
 
     location_report:
       enabled: true
       title: Location Analysis Report
       prompt: location_analysis_prompt
+      research_section: location_analysis
       dependencies: []
 
     demographics_report:
       enabled: true
       title: Customer Demographics Report
       prompt: customer_demographics_prompt
+      research_section: customer_demographics      # ← Explicit
       dependencies: []
 
     compliance_report:
       enabled: true
       title: Compliance Requirements Report
       prompt: compliance_requirements_prompt
+      research_section: compliance_requirements
       dependencies: []
 
     risk_assessment:
       enabled: true
       title: Risk Assessment
       prompt: risk_assessment_prompt
+      research_section: null      # ← null = cross-section
       dependencies:
         - market_report
         - competitive_report
@@ -179,6 +185,7 @@ report:
       enabled: true
       title: Strategic Recommendations
       prompt: strategic_recommendations_prompt
+      research_section: null      # ← null = cross-section
       dependencies:
         - risk_assessment
 

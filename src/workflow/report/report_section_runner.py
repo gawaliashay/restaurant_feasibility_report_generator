@@ -82,46 +82,36 @@ class ReportSectionRunner:
         template = prompts_loader.get_prompt("reporting", prompt_name)
         research_results = state.get("research_results", {})
         
-        # Lazy load resource limits at point of use
         mode = config_loader.get("resource_limits.mode", "fast")
         limits = config_loader.get(f"resource_limits.{mode}", {})
         
-        # Get the right evidence based on prompt type
-        if prompt_name in ["risk_assessment_prompt", "strategic_recommendations_prompt"]:
-            # Cross-section: combine ALL research sections
-            sections = ["market_analysis", "competitive_analysis", "location_analysis", 
-                       "customer_demographics", "compliance_requirements"]
-            
-            all_evidence = []
-            for section in sections:
-                evidence = research_results.get(section, {}).get("evidence", [])
-                all_evidence.extend(evidence)
-            
-            # Limit how many items to use
-            max_items = limits.get("max_tool_results_cross_section", 25)
-            all_evidence = all_evidence[:max_items]
-            
-            formatted_evidence = self._format_evidence(all_evidence, limits)
-        else:
-            # Single section: use only that section's evidence
-            prompt_to_section = {
-                "market_analysis_prompt": "market_analysis",
-                "competitive_analysis_prompt": "competitive_analysis",
-                "location_analysis_prompt": "location_analysis",
-                "customer_demographics_prompt": "customer_demographics",
-                "compliance_requirements_prompt": "compliance_requirements",
-            }
-            
-            section_name = prompt_to_section.get(prompt_name, "")
-            evidence = research_results.get(section_name, {}).get("evidence", [])
-            
-            # Limit how many items to use
+        # Find which report section has this prompt
+        report_sections = config_loader.get("report.sections", {})
+        research_section = None
+        
+        for section_name, section_config in report_sections.items():
+            if section_config.get("prompt") == prompt_name:
+                research_section = section_config.get("research_section")
+                break
+        
+        if research_section:
+            # Single section
+            evidence = research_results.get(research_section, {}).get("evidence", [])
             max_items = limits.get("max_tool_results_per_section", 10)
             evidence = evidence[:max_items]
-            
             formatted_evidence = self._format_evidence(evidence, limits)
+        else:
+            # Cross-section (null = use all)
+            sections = config_loader.get("research.sections", {})
+            all_evidence = []
+            for section_name in sections.keys():
+                evidence = research_results.get(section_name, {}).get("evidence", [])
+                all_evidence.extend(evidence)
+            
+            max_items = limits.get("max_tool_results_cross_section", 25)
+            all_evidence = all_evidence[:max_items]
+            formatted_evidence = self._format_evidence(all_evidence, limits)
         
-        # Build the context for the prompt
         context = {
             "restaurant_concept": state.get("restaurant_concept", ""),
             "investment": state.get("investment", ""),
