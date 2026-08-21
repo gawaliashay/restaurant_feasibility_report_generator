@@ -26,11 +26,21 @@ class ResearchWorkflow:
     """Orchestrate independent evidence collection sections."""
 
     def __init__(self) -> None:
-        self.sections = config_loader.get("research.sections", {})
         self.runner = ResearchSectionRunner()
-        self.workflow = self._build_workflow()
 
-    def _build_workflow(self):
+    def run(self, state: WorkflowState) -> WorkflowState:
+        """Execute the research workflow."""
+        logger.info("Research workflow started")
+
+        # Lazy load sections and build workflow at point of use
+        sections = config_loader.get("research.sections", {})
+        workflow = self._build_workflow(sections)
+        result = workflow.invoke(state)
+
+        logger.info("Research workflow completed")
+        return result  # type: ignore
+
+    def _build_workflow(self, sections: dict) -> Any:
         """
         Build a DAG where every enabled research section runs independently.
 
@@ -46,7 +56,7 @@ class ResearchWorkflow:
 
         enabled_sections = [
             name
-            for name, config in self.sections.items()
+            for name, config in sections.items()
             if config.get("enabled", True)
         ]
 
@@ -65,18 +75,13 @@ class ResearchWorkflow:
         """Create a LangGraph node for one research section."""
 
         def run_section(state: WorkflowState) -> dict[str, Any]:
-            logger.info(
-                "Running research section: %s",
-                section_name,
-            )
+            logger.info("Running research section: %s", section_name)
 
             result = self.runner.run(
                 section_name=section_name,
                 state=state,
             )
 
-            # Return only this node's output.
-            # WorkflowState merges section results using operator.or_.
             return {
                 "research_results": {
                     section_name: result
@@ -84,14 +89,3 @@ class ResearchWorkflow:
             }
 
         return run_section
-
-    def run(self, state: WorkflowState) -> WorkflowState:
-        """Execute the research workflow."""
-
-        logger.info("Research workflow started")
-
-        result = self.workflow.invoke(state)
-
-        logger.info("Research workflow completed")
-
-        return result  # type: ignore

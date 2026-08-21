@@ -20,19 +20,21 @@ class ReportWorkflow:
     """Build and run the report generation workflow."""
 
     def __init__(self) -> None:
-        self.sections = config_loader.get("report.sections", {})
         self.runner = ReportSectionRunner()
 
     def run(self, state: WorkflowState) -> WorkflowState:
         """Execute the report workflow."""
         logger.info("Starting report workflow")
 
-        graph = StateGraph(WorkflowState)
+        # Lazy load sections at point of use
+        sections = config_loader.get("report.sections", {})
 
         enabled = [
-            name for name, config in self.sections.items()
+            name for name, config in sections.items()
             if config.get("enabled", True)
         ]
+
+        graph = StateGraph(WorkflowState)
 
         # Add nodes
         for section_name in enabled:
@@ -40,18 +42,18 @@ class ReportWorkflow:
 
         # Add START edges (no dependencies)
         for section_name in enabled:
-            if not self.sections[section_name].get("dependencies", []):
+            if not sections[section_name].get("dependencies", []):
                 graph.add_edge(START, section_name)
 
         # Add dependency edges
         for section_name in enabled:
-            for dependency in self.sections[section_name].get("dependencies", []):
+            for dependency in sections[section_name].get("dependencies", []):
                 graph.add_edge(dependency, section_name)
 
         # Add END edges (no dependents)
         has_dependents = set()
         for section_name in enabled:
-            for dependency in self.sections[section_name].get("dependencies", []):
+            for dependency in sections[section_name].get("dependencies", []):
                 has_dependents.add(dependency)
 
         for section_name in enabled:

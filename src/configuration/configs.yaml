@@ -246,23 +246,23 @@ models:
       import_path: langchain_groq.ChatGroq
       api_key: ${GROQ_API_KEY}
       temperature: 0.3
-      max_tokens: 4096
+      max_tokens: 1024
 
     openai:
       model_name: gpt-4o-mini
       import_path: langchain_openai.ChatOpenAI
       api_key: ${OPENAI_API_KEY}
       temperature: 0.3
-      max_tokens: 4096
+      max_tokens: 1024
 
 
 # ============================================================
-# REPORT QUALITY - Single Source of Truth for Data Budgets
+# RESOURCE LIMITS - Control data, token, and API consumption
 # ============================================================
 
-report_quality:
+resource_limits:
   # Available modes: fast, balanced, quality
-  mode: "fast"
+  mode: "balanced"
 
   # ----- FAST MODE -----
   # Quick responses, minimal cost, suitable for exploration

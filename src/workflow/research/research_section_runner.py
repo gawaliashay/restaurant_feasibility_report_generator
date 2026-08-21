@@ -9,6 +9,7 @@ Responsibilities:
 - Build tool parameters from configuration.
 - Execute tools through the tool pipeline.
 - Convert results into evidence.
+- Apply section-level evidence limits.
 """
 
 from typing import Any
@@ -25,7 +26,7 @@ class ResearchSectionRunner:
     """Execute research sections using configuration."""
 
     def __init__(self) -> None:
-        self.sections = config_loader.get("research.sections", {})
+        # Only non-config dependencies
         self.evidence_processor = EvidenceProcessor()
 
     def run(
@@ -35,7 +36,9 @@ class ResearchSectionRunner:
     ) -> dict[str, Any]:
         """Execute one configured research section."""
         try:
-            section = self.sections.get(section_name)
+            # Lazy load config at point of use
+            sections = config_loader.get("research.sections", {})
+            section = sections.get(section_name)
 
             if not section:
                 raise CustomException(f"Research section not found: {section_name}")
@@ -89,7 +92,18 @@ class ResearchSectionRunner:
                         )
                     )
 
-            logger.info("Research section completed: %s", section_name)
+            # Lazy load resource limits and apply section-level evidence limit
+            mode = config_loader.get("resource_limits.mode", "fast")
+            limits = config_loader.get(f"resource_limits.{mode}", {})
+            max_chars = limits.get("max_evidence_chars_per_section", 2000)
+            evidence = self._limit_evidence_by_chars(evidence, max_chars)
+
+            logger.info(
+                "Research section completed: %s (%d evidence items, %d chars)",
+                section_name,
+                len(evidence),
+                sum(len(e.get("content", "")) for e in evidence)
+            )
 
             return {
                 "section": section_name,
@@ -105,3 +119,29 @@ class ResearchSectionRunner:
                 "evidence": [],
                 "error": str(exc),
             }
+
+    def _limit_evidence_by_chars(
+        self,
+        evidence: list[dict[str, Any]],
+        max_chars: int
+    ) -> list[dict[str, Any]]:
+        """Limit evidence by total character count."""
+        if not evidence:
+            return []
+
+        limited = []
+        total_chars = 0
+
+        for item in evidence:
+            content = item.get("content", "")
+            remaining = max_chars - total_chars
+
+            if remaining <= 0:
+                break
+
+            item_copy = item.copy()
+            item_copy["content"] = content[:remaining]
+            limited.append(item_copy)
+            total_chars += len(item_copy["content"])
+
+        return limited

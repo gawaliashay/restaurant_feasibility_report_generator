@@ -13,9 +13,9 @@ from src.workflow.report.report_exporter import export_report
 from src.configuration.config_loader import config_loader
 
 
-
 def build_state() -> WorkflowState:
     """Build initial state from config."""
+    # This is a function - lazy loading here is fine
     business = config_loader.get("business_case.default", {})
     location = business.get("location", {})
 
