@@ -1,3 +1,5 @@
+# src\common\tools\clients\rag_client.py
+
 """
 RAG (Retrieval-Augmented Generation) client.
 """

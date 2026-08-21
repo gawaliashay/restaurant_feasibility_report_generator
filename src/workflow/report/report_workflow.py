@@ -45,14 +45,14 @@ class ReportWorkflow:
 
         # Add dependency edges
         for section_name in enabled:
-            for dep in self.sections[section_name].get("dependencies", []):
-                graph.add_edge(dep, section_name)
+            for dependency in self.sections[section_name].get("dependencies", []):
+                graph.add_edge(dependency, section_name)
 
         # Add END edges (no dependents)
         has_dependents = set()
         for section_name in enabled:
-            for dep in self.sections[section_name].get("dependencies", []):
-                has_dependents.add(dep)
+            for dependency in self.sections[section_name].get("dependencies", []):
+                has_dependents.add(dependency)
 
         for section_name in enabled:
             if section_name not in has_dependents:

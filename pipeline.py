@@ -1,3 +1,5 @@
+# pipeline.py
+
 """
 Complete pipeline runner.
 Executes both research and report workflows.

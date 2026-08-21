@@ -55,6 +55,7 @@ business_case:
     target_demographic: "Professionals 25-45, health-conscious"
     special_note: "momo demand, spending power, competition density"
 
+
 # ============================================================
 # RESEARCH - Evidence Collection (All Independent)
 # ============================================================
@@ -126,13 +127,6 @@ research:
           - "Maharashtra restaurant municipal trade license and Fire NOC"
           - "restaurant eating house and music license requirements India"
 
-# ============================================================
-# RESEARCH LIMITS
-# ============================================================
-  limits:
-  
-    max_evidence_chars: 2000
-    max_text_per_result: 300
 
 # ============================================================
 # REPORT - Analysis & Synthesis
@@ -144,31 +138,31 @@ report:
       enabled: true
       title: Market Analysis Report
       prompt: market_analysis_prompt
-      dependencies: []   # ✅ No dependencies - gets evidence from research_results
+      dependencies: []
 
     competitive_report:
       enabled: true
       title: Competitive Analysis Report
       prompt: competitive_analysis_prompt
-      dependencies: []   # ✅ No dependencies
+      dependencies: []
 
     location_report:
       enabled: true
       title: Location Analysis Report
       prompt: location_analysis_prompt
-      dependencies: []   # ✅ No dependencies
+      dependencies: []
 
     demographics_report:
       enabled: true
       title: Customer Demographics Report
       prompt: customer_demographics_prompt
-      dependencies: []   # ✅ No dependencies
+      dependencies: []
 
     compliance_report:
       enabled: true
       title: Compliance Requirements Report
       prompt: compliance_requirements_prompt
-      dependencies: []   # ✅ No dependencies
+      dependencies: []
 
     risk_assessment:
       enabled: true
@@ -213,6 +207,7 @@ export:
   output_dir: reports
   timestamp_format: "%Y%m%d_%H%M%S"
 
+
 # ============================================================
 # TOOL CONFIGURATION
 # ============================================================
@@ -241,28 +236,94 @@ tools:
 # ============================================================
 
 defaults:
-   fast_llm: groq
-   analysis_llm: openai
+  fast_llm: groq
+  analysis_llm: openai
 
 models:
   llms:
     groq:
-      model_name: llama-3.1-8b-instant
+      model_name: openai/gpt-oss-20b
       import_path: langchain_groq.ChatGroq
       api_key: ${GROQ_API_KEY}
       temperature: 0.3
-      max_tokens: 2048
+      max_tokens: 4096
 
     openai:
       model_name: gpt-4o-mini
       import_path: langchain_openai.ChatOpenAI
       api_key: ${OPENAI_API_KEY}
       temperature: 0.3
-      max_tokens: 2048
+      max_tokens: 4096
 
 
 # ============================================================
-# REPORT SETTINGS
+# REPORT QUALITY - Single Source of Truth for Data Budgets
+# ============================================================
+
+report_quality:
+  # Available modes: fast, balanced, quality
+  mode: "fast"
+
+  # ----- FAST MODE -----
+  # Quick responses, minimal cost, suitable for exploration
+  fast:
+    # Research phase - evidence collection
+    max_evidence_chars_per_section: 2000      # Total evidence per section
+    max_tool_results_per_section: 10          # Max items per tool in a section
+    max_tool_results_cross_section: 25        # Max items for cross-section analysis
+    max_text_per_result: 300                  # Truncate each result to this
+
+    # RAG phase - document retrieval
+    max_chars_per_rag_chunk: 300
+    max_rag_chunks_per_section: 4
+
+    # Report synthesis phase
+    max_summary_chars_for_sections: 500       # Summary length per section
+    max_llm_output_tokens: 1024               # LLM output budget
+    max_citation_chars: 1500                  # Citation section length
+    max_evidence_chars_for_final_report: 6000 # Total evidence for final report
+
+  # ----- BALANCED MODE -----
+  # Good quality with reasonable cost, suitable for most use cases
+  balanced:
+    # Research phase - evidence collection
+    max_evidence_chars_per_section: 3000
+    max_tool_results_per_section: 12
+    max_tool_results_cross_section: 35
+    max_text_per_result: 400
+
+    # RAG phase - document retrieval
+    max_chars_per_rag_chunk: 400
+    max_rag_chunks_per_section: 5
+
+    # Report synthesis phase
+    max_summary_chars_for_sections: 600
+    max_llm_output_tokens: 1536
+    max_citation_chars: 2000
+    max_evidence_chars_for_final_report: 8000
+
+  # ----- QUALITY MODE -----
+  # Thorough analysis, higher cost, suitable for final decisions
+  quality:
+    # Research phase - evidence collection
+    max_evidence_chars_per_section: 4000
+    max_tool_results_per_section: 15
+    max_tool_results_cross_section: 50
+    max_text_per_result: 500
+
+    # RAG phase - document retrieval
+    max_chars_per_rag_chunk: 500
+    max_rag_chunks_per_section: 4
+
+    # Report synthesis phase
+    max_summary_chars_for_sections: 800
+    max_llm_output_tokens: 2048
+    max_citation_chars: 3000
+    max_evidence_chars_for_final_report: 10000
+
+
+# ============================================================
+# REPORTING SETTINGS
 # ============================================================
 
 reporting:
@@ -274,67 +335,26 @@ reporting:
     - json
   max_concurrent_requests: 1
   empty_evidence_message: "No evidence available."
-  
+
   citation_fields:
     - url
     - source
     - document_name
     - title
     - reference
-  
+
   rate_limit_indicators:
     - "rate limit"
     - "too many requests"
     - "429"
     - "quota exceeded"
-  
+
   retry:
     max_retries: 3
     backoff_seconds: 1.0
     max_backoff_seconds: 30.0
     retry_after_pattern: "retry-after:\\s*(\\d+)"
     retry_after_buffer_seconds: 1.0
-
-
-# ============================================================
-# REPORT QUALITY
-# ============================================================
-
-report_quality:
-  mode: "balanced"
-
-  fast:
-    max_evidence_chars_per_section: 2000
-    max_tool_results_per_section: 10
-    max_tool_results_cross_section: 25
-    max_chars_per_rag_chunk: 300
-    max_rag_chunks_per_section: 4
-    max_summary_chars_for_sections: 500
-    max_llm_output_tokens: 1024
-    max_citation_chars: 1500
-    max_evidence_chars_for_final_report: 6000
-
-  balanced:
-    max_evidence_chars_per_section: 3000
-    max_tool_results_per_section: 12
-    max_tool_results_cross_section: 35
-    max_chars_per_rag_chunk: 400
-    max_rag_chunks_per_section: 5
-    max_summary_chars_for_sections: 600
-    max_llm_output_tokens: 1536
-    max_citation_chars: 2000
-    max_evidence_chars_for_final_report: 8000
-
-  quality:
-    max_evidence_chars_per_section: 4000
-    max_tool_results_per_section: 15
-    max_tool_results_cross_section: 50
-    max_chars_per_rag_chunk: 500
-    max_rag_chunks_per_section: 4
-    max_summary_chars_for_sections: 800
-    max_llm_output_tokens: 2048
-    max_citation_chars: 3000
-    max_evidence_chars_for_final_report: 10000
 
 
 # ============================================================
@@ -413,8 +433,6 @@ rag_embeddings:
     model_name: sentence-transformers/all-MiniLM-L6-v2
     dimensions: 384
     import_path: langchain_huggingface.HuggingFaceEmbeddings
-    # No api_key needed for local sentence-transformers models!
-  
 
   openai:
     model_name: text-embedding-3-small

@@ -1,12 +1,17 @@
+# tests\test_model_loader.py
+
 """
 Test for ModelLoader - Config-Driven.
-
-Run:
-    python -m src.common.test_model_loader
 """
 
+import sys
+from pathlib import Path
 import logging
-from typing import Any, Dict
+from typing import Any
+import time
+
+# Add parent directory to path BEFORE importing src modules
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.common.model_loader import model_loader
 from src.configuration.config_loader import config_loader
@@ -189,6 +194,58 @@ def test_embedding_metadata() -> None:
         print(f"    API Key: {'***HIDDEN***' if api_key else 'Not configured'}")
 
 
+def test_llm_invocation() -> None:
+    """Test actual LLM invocation (API call) with timeout."""
+    print_section("TESTING LLM INVOCATION (API CALL)")
+    
+    defaults = config_loader.get("defaults", {})
+    provider = defaults.get("analysis_llm")
+    
+    if not provider:
+        print("  ⚠️  No analysis_llm configured")
+        return
+    
+    llm = None  # Initialize llm to None
+    model_name = "Unknown"  # Store model name separately
+    
+    try:
+        llm = model_loader.get_llm("analysis_llm")
+        # Store the model name for error reporting
+        model_name = llm.model_name if hasattr(llm, "model_name") else "Unknown"
+        
+        print(f"  Model loaded: {type(llm).__name__}")
+        print(f"  Model name: {model_name}")
+        print(f"  Provider: {provider}")
+        
+        # 🔥 ACTUAL API CALL with timeout
+        print("  Making API call (timeout: 30 seconds)...")
+        start_time = time.time()
+        
+        # Use a very simple prompt
+        response = llm.invoke("Say 'API test successful'")
+        
+        elapsed = time.time() - start_time
+        print(f"  ⏱️  Response time: {elapsed:.2f} seconds")
+        print(f"  ✅ API call successful!")
+        print(f"  Response: {response.content[:200]}...")
+        
+    except TimeoutError:
+        print(f"  ❌ API call timed out after 30 seconds")
+        print(f"  This indicates a network issue or slow API response")
+        
+    except Exception as e:
+        print(f"  ❌ API call failed: {e}")
+        print(f"  🔍 This is why the pipeline fails!")
+        
+        # Check if it's a model not found error
+        if "model" in str(e).lower() and ("not found" in str(e).lower() or "404" in str(e)):
+            print(f"\n  💡 FIX: The model name '{model_name}' is invalid.")
+            print(f"  Update your config to use a valid Groq model:")
+            print(f"    - llama-3.3-70b-versatile")
+            print(f"    - llama-3.1-8b-instant")
+            print(f"    - llama-3.1-70b-versatile")
+
+
 def main() -> None:
     """Run all tests."""
     print("\n" + "=" * 70)
@@ -206,6 +263,9 @@ def main() -> None:
     # 3. Loading Tests
     test_llm_loading()
     test_embedding_loading()
+    
+    # 4. 🔥 Actual API Call Test
+    test_llm_invocation()
 
     print("\n" + "=" * 70)
     print(" TEST COMPLETE")

@@ -13,7 +13,7 @@ Responsibilities:
 import logging
 from typing import Any
 
-from src.common.tools.client_connector import TOOLS
+from src.common.tools.tool_registry import TOOLS
 from src.configuration.config_loader import config_loader
 
 logger = logging.getLogger(__name__)

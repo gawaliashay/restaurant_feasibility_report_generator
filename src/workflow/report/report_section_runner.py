@@ -3,9 +3,10 @@
 """
 Report Section Runner.
 
-Generates report sections using LLM.
+Generates report sections using LLM with exponential backoff retry.
 """
 
+import time
 from typing import Any
 
 from src.common.model_loader import model_loader
@@ -23,9 +24,14 @@ class ReportSectionRunner:
         self.sections = config_loader.get("report.sections", {})
         self.llm = model_loader.get_llm("analysis_llm")
         self.compiler = ReportCompiler()
+        
+        # Retry settings
+        retry = config_loader.get("reporting.retry", {})
+        self.max_retries = retry.get("max_retries", 3)
+        self.base_delay = retry.get("backoff_seconds", 1.0)
 
     def run(self, section_name: str, state: WorkflowState) -> dict[str, Any]:
-        """Generate a single report section."""
+        """Generate a single report section with retry."""
         try:
             section = self.sections.get(section_name)
 
@@ -35,25 +41,36 @@ class ReportSectionRunner:
             if not section.get("enabled", True):
                 return {"section": section_name, "status": "skipped", "report": ""}
 
-            # final_compilation: stack reports (no LLM)
             if section_name == "final_compilation":
                 logger.info("Compiling final report: %s", section_name)
                 return {"section": section_name, "status": "success", "report": self.compiler.compile(dict(state))}
 
-            # All other sections: use LLM
             prompt_name = section.get("prompt")
             if not prompt_name:
                 return {"section": section_name, "status": "failed", "report": "", "error": "No prompt"}
 
             prompt = self._build_prompt(prompt_name, state)
-            response = self.llm.invoke(prompt)
-            report = self._get_text(response)
-
-            if not report:
-                return {"section": section_name, "status": "failed", "report": "", "error": "Empty response"}
-
-            logger.info("Report section completed: %s", section_name)
-            return {"section": section_name, "status": "success", "report": report}
+            
+            # Retry with exponential backoff
+            for attempt in range(self.max_retries):
+                try:
+                    response = self.llm.invoke(prompt)
+                    report = self._get_text(response)
+                    
+                    if report:
+                        logger.info("Report section completed: %s", section_name)
+                        return {"section": section_name, "status": "success", "report": report}
+                        
+                except Exception as e:
+                    if attempt == self.max_retries - 1:
+                        logger.exception("Report section failed: %s", section_name)
+                        return {"section": section_name, "status": "failed", "report": "", "error": str(e)}
+                    
+                    delay = self.base_delay * (2 ** attempt)
+                    logger.warning(f"Retry {attempt+1}/{self.max_retries} for {section_name} in {delay}s")
+                    time.sleep(delay)
+            
+            return {"section": section_name, "status": "failed", "report": "", "error": "Max retries exceeded"}
 
         except Exception as e:
             logger.exception("Report section failed: %s", section_name)
@@ -63,7 +80,6 @@ class ReportSectionRunner:
         template = prompts_loader.get_prompt("reporting", prompt_name)
         research_results = state.get("research_results", {})
         
-        # Map prompt → research section
         prompt_to_research = {
             "market_analysis_prompt": "market_analysis",
             "competitive_analysis_prompt": "competitive_analysis",
@@ -74,7 +90,6 @@ class ReportSectionRunner:
             "strategic_recommendations_prompt": None,
         }
         
-        # Cross-section prompts get ALL evidence (distributed evenly across sections)
         if prompt_name in ["risk_assessment_prompt", "strategic_recommendations_prompt"]:
             sections_list = ["market_analysis", "competitive_analysis", "location_analysis", 
                         "customer_demographics", "compliance_requirements"]
@@ -91,7 +106,6 @@ class ReportSectionRunner:
             formatted_evidence = self._format_evidence(all_evidence, cross_section=True)
 
         else:
-            # ✅ FIX: Get the research section name, default to empty string
             research_section = prompt_to_research.get(prompt_name, "")
             evidence = research_results.get(research_section, {}).get("evidence", []) if research_section else []
             formatted_evidence = self._format_evidence(evidence)
