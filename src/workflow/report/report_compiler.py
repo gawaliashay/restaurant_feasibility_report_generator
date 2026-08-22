@@ -9,6 +9,7 @@ No LLM used.
 
 from typing import Any
 from datetime import datetime
+from src.configuration.config_loader import config_loader
 
 
 class ReportCompiler:
@@ -19,17 +20,12 @@ class ReportCompiler:
         reports = state.get("section_reports", {})
         research = state.get("research_results", {})
 
-        # Count total evidence
+        # Load from config instead of hardcoding
+        research_sections = config_loader.get("research.sections", {})
         total = 0
-        sections = [
-            "market_analysis",
-            "competitive_analysis",
-            "location_analysis",
-            "customer_demographics",
-            "compliance_requirements",
-        ]
-        for section in sections:
-            total += len(research.get(section, {}).get("evidence", []))
+        for section_name, section_config in research_sections.items():
+            if section_config.get("enabled", True):
+                total += len(research.get(section_name, {}).get("evidence", []))
 
         # Build report
         parts = [
@@ -56,6 +52,8 @@ class ReportCompiler:
             "---",
         ])
 
+    # src/workflow/report/report_compiler.py
+
     def _summary(self, state: dict, total: int, reports: dict) -> str:
         """Generate executive summary."""
         lines = [
@@ -66,25 +64,45 @@ class ReportCompiler:
             "",
         ]
 
-        section_map = {
-            "market_report": "Market",
-            "competitive_report": "Competition",
-            "location_report": "Location",
-            "demographics_report": "Demographics",
-            "compliance_report": "Compliance",
-        }
-
-        for key, title in section_map.items():
-            result = reports.get(key, {})
+        # Load from config instead of hardcoding
+        sections = config_loader.get("report.sections", {})
+        
+        for section_name, section_config in sections.items():
+            if section_name == "final_compilation":
+                continue
+            result = reports.get(section_name, {})
             if result.get("status") == "success":
                 report_text = result.get("report", "")
                 if report_text:
                     summary = self._get_first_sentence(report_text)
                     if summary:
+                        title = section_config.get("title", section_name).replace(" Report", "")
                         lines.append(f"- **{title}:** {summary}")
 
         lines.extend(["", "---"])
         return "\n".join(lines)
+
+
+    def _sections(self, reports: dict) -> str:
+        """Generate all section reports."""
+        sections = config_loader.get("report.sections", {})
+        parts = []
+        
+        for section_name, section_config in sections.items():
+            # Skip disabled sections
+            if not section_config.get("enabled", True):
+                continue
+            # Skip cross-section sections (they are added separately)
+            if section_config.get("research_section") is None:
+                continue
+                
+            result = reports.get(section_name, {})
+            if result.get("status") == "success":
+                report_text = result.get("report", "")
+                if report_text:
+                    parts.append(f"{report_text}\n\n---")
+        
+        return "\n".join(parts)
 
     def _get_first_sentence(self, text: str) -> str:
         """Extract first meaningful line from section text."""
@@ -134,25 +152,6 @@ class ReportCompiler:
             return text[:idx + 1]
         return text
 
-    def _sections(self, reports: dict) -> str:
-        section_map = {
-            "market_report": "Market Analysis",
-            "competitive_report": "Competitive Analysis",
-            "location_report": "Location Analysis",
-            "demographics_report": "Customer Demographics",
-            "compliance_report": "Compliance Requirements",
-        }
-
-        parts = []
-        for key in section_map:
-            result = reports.get(key, {})
-            if result.get("status") == "success":
-                report_text = result.get("report", "")
-                if report_text:
-                    parts.append(f"{report_text}\n\n---")
-
-        return "\n".join(parts)
-
     def _risk(self, reports: dict) -> str:
         result = reports.get("risk_assessment", {})
         if result.get("status") == "success":
@@ -181,23 +180,35 @@ class ReportCompiler:
             "",
         ]
 
-        # Risk summary from risk section (just the overview)
+        # Risk summary from risk section
         risk_result = reports.get("risk_assessment", {})
         if risk_result.get("status") == "success":
             risk_text = risk_result.get("report", "")
             has_risks = False
+            
+            # Look for "Overall Risk Summary" or "Overall"
             for line in risk_text.split("\n"):
                 clean = line.strip()
                 lower = clean.lower()
-                if "high risks" in lower or "medium risks" in lower or "low risks" in lower:
-                    if not has_risks:
-                        lines.append("**Risk Overview:**")
-                        has_risks = True
+                
+                # Look for risk summary section
+                if "overall risk summary" in lower or "## overall" in lower:
+                    lines.append("**Risk Overview:**")
+                    has_risks = True
+                    continue
+                
+                # Look for risk lines
+                if has_risks and ("- high risks" in lower or "- medium risks" in lower or "- low risks" in lower):
                     lines.append(clean)
+                    
+                # Stop when we reach the next section
+                if has_risks and clean.startswith("##") and "risk" not in lower:
+                    break
+            
             if has_risks:
                 lines.append("")
 
-        # Point to recommendations section (don't duplicate)
+        # Point to recommendations section
         rec_result = reports.get("strategic_recommendations", {})
         if rec_result.get("status") == "success":
             lines.append("**Key Recommendations:**")

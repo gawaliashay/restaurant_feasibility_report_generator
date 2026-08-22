@@ -54,6 +54,9 @@ class ResearchSectionRunner:
             logger.info("Research section started: %s", section_name)
             evidence: list[dict[str, Any]] = []
 
+            # ============================================================
+            # Step 1: Execute all tools for this section
+            # ============================================================
             for tool_name in section.get("tools", []):
                 queries = section.get("queries", {}).get(tool_name, [])
                 tool_config = config_loader.get(f"tools.{tool_name}", {})
@@ -63,7 +66,7 @@ class ResearchSectionRunner:
                     raise CustomException(f"Query parameter not configured: {tool_name}")
 
                 for query_template in queries:
-                    # Format query using state
+                    # Format query using state variables
                     query = query_template.format(**state)
                     params = {query_param: query}
 
@@ -83,7 +86,7 @@ class ResearchSectionRunner:
                         logger.warning("Tool failed: %s | query=%s", tool_name, query)
                         continue
 
-                    # Convert to evidence
+                    # Convert raw tool output to standardized evidence
                     evidence.extend(
                         self.evidence_processor.process(
                             tool_name=tool_name,
@@ -92,7 +95,19 @@ class ResearchSectionRunner:
                         )
                     )
 
-            # Lazy load resource limits and apply section-level evidence limit
+            # ============================================================
+            # Step 2: Remove duplicate evidence
+            # ============================================================
+            evidence = self._remove_duplicates(evidence)
+
+            # ============================================================
+            # Step 3: Sort by relevance score (highest first)
+            # ============================================================
+            evidence = self._sort_by_score(evidence)
+
+            # ============================================================
+            # Step 4: Apply character limit per section
+            # ============================================================
             mode = config_loader.get("resource_limits.mode", "fast")
             limits = config_loader.get(f"resource_limits.{mode}", {})
             max_chars = limits.get("max_evidence_chars_per_section", 2000)
@@ -120,12 +135,63 @@ class ResearchSectionRunner:
                 "error": str(exc),
             }
 
+    def _remove_duplicates(self, evidence: list) -> list:
+        """
+        Remove duplicate evidence items.
+        Uses source + title as unique key.
+        """
+        seen = set()
+        unique = []
+
+        for item in evidence:
+            source = item.get("source", "")
+            title = item.get("title", "")
+            key = source + ":" + title
+
+            # Skip if we've seen this before
+            if key not in seen:
+                seen.add(key)
+                unique.append(item)
+
+        return unique
+
+    def _sort_by_score(self, evidence: list) -> list:
+        """
+        Sort evidence by relevance score (highest first).
+        Items with score go first, items without score go last.
+        """
+        with_score = []
+        without_score = []
+
+        # Separate items with and without scores
+        for item in evidence:
+            score = item.get("extra", {}).get("score")
+            if score is not None:
+                with_score.append(item)
+            else:
+                without_score.append(item)
+
+        # Simple bubble sort - put highest score first
+        for i in range(len(with_score)):
+            for j in range(i + 1, len(with_score)):
+                score_i = with_score[i].get("extra", {}).get("score", 0)
+                score_j = with_score[j].get("extra", {}).get("score", 0)
+                if score_i < score_j:
+                    # Swap
+                    with_score[i], with_score[j] = with_score[j], with_score[i]
+
+        # Items with score first, then items without score
+        return with_score + without_score
+
     def _limit_evidence_by_chars(
         self,
         evidence: list[dict[str, Any]],
         max_chars: int
     ) -> list[dict[str, Any]]:
-        """Limit evidence by total character count."""
+        """
+        Limit evidence by total character count.
+        Keeps adding evidence until max_chars is reached.
+        """
         if not evidence:
             return []
 
@@ -136,12 +202,16 @@ class ResearchSectionRunner:
             content = item.get("content", "")
             remaining = max_chars - total_chars
 
+            # Stop if we've reached the limit
             if remaining <= 0:
                 break
 
+            # Copy item and truncate content if needed
             item_copy = item.copy()
             item_copy["content"] = content[:remaining]
             limited.append(item_copy)
+
+            # Track total characters used
             total_chars += len(item_copy["content"])
 
         return limited

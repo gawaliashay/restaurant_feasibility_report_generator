@@ -267,31 +267,31 @@ models:
 # RESOURCE LIMITS - Control data, token, and API consumption
 # ============================================================
 
+# src/configuration/configs.yaml
+
 resource_limits:
   # Available modes: fast, balanced, quality
-  mode: "balanced"
+  mode: "quality"   # ← CHANGE THIS
 
   # ----- FAST MODE -----
-  # Quick responses, minimal cost, suitable for exploration
   fast:
     # Research phase - evidence collection
-    max_evidence_chars_per_section: 2000      # Total evidence per section
-    max_tool_results_per_section: 10          # Max items per tool in a section
-    max_tool_results_cross_section: 25        # Max items for cross-section analysis
-    max_text_per_result: 300                  # Truncate each result to this
+    max_evidence_chars_per_section: 2000
+    max_tool_results_per_section: 10
+    max_tool_results_cross_section: 25
+    max_text_per_result: 300
 
     # RAG phase - document retrieval
     max_chars_per_rag_chunk: 300
     max_rag_chunks_per_section: 4
 
     # Report synthesis phase
-    max_summary_chars_for_sections: 500       # Summary length per section
-    max_llm_output_tokens: 1024               # LLM output budget
-    max_citation_chars: 1500                  # Citation section length
-    max_evidence_chars_for_final_report: 6000 # Total evidence for final report
+    max_summary_chars_for_sections: 500
+    max_llm_output_tokens: 1024
+    max_citation_chars: 1500
+    max_evidence_chars_for_final_report: 6000
 
   # ----- BALANCED MODE -----
-  # Good quality with reasonable cost, suitable for most use cases
   balanced:
     # Research phase - evidence collection
     max_evidence_chars_per_section: 3000
@@ -310,21 +310,20 @@ resource_limits:
     max_evidence_chars_for_final_report: 8000
 
   # ----- QUALITY MODE -----
-  # Thorough analysis, higher cost, suitable for final decisions
   quality:
     # Research phase - evidence collection
-    max_evidence_chars_per_section: 4000
-    max_tool_results_per_section: 15
+    max_evidence_chars_per_section: 6000    # More chars per section
+    max_tool_results_per_section: 15        # More items per tool
     max_tool_results_cross_section: 50
-    max_text_per_result: 500
+    max_text_per_result: 300                # More text per result
 
     # RAG phase - document retrieval
     max_chars_per_rag_chunk: 500
     max_rag_chunks_per_section: 4
 
     # Report synthesis phase
-    max_summary_chars_for_sections: 800
-    max_llm_output_tokens: 2048
+    max_summary_chars_for_sections: 800     # More summary per section
+    max_llm_output_tokens: 2048             # More LLM output
     max_citation_chars: 3000
     max_evidence_chars_for_final_report: 10000
 
