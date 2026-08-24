@@ -1,14 +1,9 @@
-# src\workflow\research\research_workflow.py
+# src/workflow/research/research_workflow.py
 
 """
 Research workflow - Evidence Collection only.
 
-Responsibilities:
-- Orchestrate independent research sections
-- Run enabled sections in parallel
-- Maintain workflow state
-- Delegate section execution to ResearchSectionRunner
-
+Orchestrate independent research sections in parallel.
 No tool-specific logic belongs here.
 """
 
@@ -32,7 +27,6 @@ class ResearchWorkflow:
         """Execute the research workflow."""
         logger.info("Research workflow started")
 
-        # Lazy load sections and build workflow at point of use
         sections = config_loader.get("research.sections", {})
         workflow = self._build_workflow(sections)
         result = workflow.invoke(state)
@@ -41,17 +35,7 @@ class ResearchWorkflow:
         return result  # type: ignore
 
     def _build_workflow(self, sections: dict) -> Any:
-        """
-        Build a DAG where every enabled research section runs independently.
-
-        Sections are loaded dynamically from configuration and follow:
-
-            START → Research Section → END
-
-        This allows new independent research sections to be added
-        through configuration without modifying the workflow code.
-        """
-
+        """START → each enabled section → END (sections run independently)."""
         graph = StateGraph(WorkflowState)
 
         enabled_sections = [
@@ -61,21 +45,17 @@ class ResearchWorkflow:
         ]
 
         for section_name in enabled_sections:
-            graph.add_node(
-                section_name,
-                self._create_section_node(section_name),
-            )
-
+            graph.add_node(section_name, self._create_section_node(section_name))
             graph.add_edge(START, section_name)
             graph.add_edge(section_name, END)
 
         return graph.compile()
 
     def _create_section_node(self, section_name: str):
-        """Create a LangGraph node for one research section."""
+        """One LangGraph node: run a section, merge evidence and errors."""
 
         def run_section(state: WorkflowState) -> dict[str, Any]:
-            logger.info("Running research section: %s", section_name)
+            logger.info("Running research section", section=section_name)
 
             result = self.runner.run(
                 section_name=section_name,
@@ -83,9 +63,8 @@ class ResearchWorkflow:
             )
 
             return {
-                "research_results": {
-                    section_name: result
-                }
+                "research_results": {section_name: result},
+                "errors": result.get("errors", []),
             }
 
         return run_section

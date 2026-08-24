@@ -1,4 +1,4 @@
-# src\common\tools\clients\serpapi_client.py
+# src/common/tools/clients/serpapi_client.py
 
 """
 SerpAPI client for Google Maps and Google Trends.
@@ -11,247 +11,118 @@ from typing import Any
 import requests
 
 from src.configuration.config_loader import config_loader
-from ..query_normalizer import normalize_query
 
 logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=1)
 def _get_config() -> dict[str, Any]:
-    """Load and cache SerpAPI configuration."""
+    """Load and cache SerpAPI connection settings."""
     return config_loader.get("apis.serpapi", {})
 
 
-def google_maps(map_query: str | list[str], location: str) -> dict[str, Any]:
-    """Search local businesses using Google Maps."""
-    # Validate query
-    q, error = normalize_query(map_query)
-    if error:
-        return {
-            "tool": "google_maps",
-            "status": "failed",
-            "data": [],
-            "error": error,
-        }
-    
-    # Get configuration
+def _failed(tool: str, error: str) -> dict[str, Any]:
+    return {"tool": tool, "status": "failed", "data": [], "error": error}
+
+
+def _ok(tool: str, data: list) -> dict[str, Any]:
+    return {"tool": tool, "status": "success", "data": data, "error": None}
+
+
+def google_maps(query: str, location: str) -> dict[str, Any]:
+    """Search local businesses using Google Maps via SerpAPI."""
+    if not query or not query.strip():
+        return _failed("google_maps", "Query cannot be empty")
+    if not location or not location.strip():
+        return _failed("google_maps", "Location cannot be empty")
+
     config = _get_config()
     api_key = config.get("api_key")
     endpoint = config.get("endpoint")
     timeout = config.get("timeout")
-    
+
     if not api_key:
-        return {
-            "tool": "google_maps",
-            "status": "failed",
-            "data": [],
-            "error": "SerpAPI key is missing",
-        }
-    
+        return _failed("google_maps", "SerpAPI key is missing")
     if not endpoint:
-        return {
-            "tool": "google_maps",
-            "status": "failed",
-            "data": [],
-            "error": "SerpAPI endpoint is missing",
-        }
-    
-    # Get tool config
-    tool_config = config_loader.get("tools.google_maps", {})
-    engine = tool_config.get("engine")
-    
-    if not engine:
-        return {
-            "tool": "google_maps",
-            "status": "failed",
-            "data": [],
-            "error": "Google Maps engine not configured",
-        }
-    
-    # Build request parameters
+        return _failed("google_maps", "SerpAPI endpoint is missing")
+
     params = {
-        "engine": engine,
-        "q": q,
-        "location": location,
+        "engine": "google_local",
+        "q": query.strip(),
+        "location": location.strip(),
         "hl": "en",
         "gl": "in",
         "api_key": api_key,
     }
-    
-    # Make API request
+
     try:
         response = requests.get(endpoint, params=params, timeout=timeout)
         response.raise_for_status()
-        
         data = response.json()
-        
-        # Check for API error
+
         if data.get("error"):
-            return {
-                "tool": "google_maps",
-                "status": "failed",
-                "data": data,
-                "error": str(data["error"]),
-            }
-        
-        # Extract local_results
+            return _failed("google_maps", str(data["error"]))
+
         if isinstance(data, dict) and "local_results" in data:
-            return {
-                "tool": "google_maps",
-                "status": "success",
-                "data": data["local_results"],
-                "error": None,
-            }
-        
-        return {
-            "tool": "google_maps",
-            "status": "success",
-            "data": [],
-            "error": None,
-        }
-    
+            return _ok("google_maps", data["local_results"])
+
+        return _ok("google_maps", [])
+
     except requests.exceptions.RequestException as e:
-        logger.exception(f"Google Maps request failed: {e}")
-        return {
-            "tool": "google_maps",
-            "status": "failed",
-            "data": [],
-            "error": str(e),
-        }
-    
+        logger.exception("Google Maps request failed: %s", e)
+        return _failed("google_maps", str(e))
     except Exception as e:
-        logger.exception(f"Google Maps failed: {e}")
-        return {
-            "tool": "google_maps",
-            "status": "failed",
-            "data": [],
-            "error": str(e),
-        }
+        logger.exception("Google Maps failed: %s", e)
+        return _failed("google_maps", str(e))
 
 
-def google_trends(trend_query: str | list[str]) -> dict[str, Any]:
-    """Get Google Trends data."""
-    # Validate query
-    q, error = normalize_query(trend_query)
-    if error:
-        return {
-            "tool": "google_trends",
-            "status": "failed",
-            "data": [],
-            "error": error,
-        }
-    
-    # Get configuration
+def google_trends(query: str) -> dict[str, Any]:
+    """Get Google Trends data via SerpAPI."""
+    if not query or not query.strip():
+        return _failed("google_trends", "Query cannot be empty")
+
     config = _get_config()
     api_key = config.get("api_key")
     endpoint = config.get("endpoint")
     timeout = config.get("timeout")
-    
+
     if not api_key:
-        return {
-            "tool": "google_trends",
-            "status": "failed",
-            "data": [],
-            "error": "SerpAPI key is missing",
-        }
-    
+        return _failed("google_trends", "SerpAPI key is missing")
     if not endpoint:
-        return {
-            "tool": "google_trends",
-            "status": "failed",
-            "data": [],
-            "error": "SerpAPI endpoint is missing",
-        }
-    
-    # Get tool config
-    tool_config = config_loader.get("tools.google_trends", {})
-    engine = tool_config.get("engine")
-    
-    if not engine:
-        return {
-            "tool": "google_trends",
-            "status": "failed",
-            "data": [],
-            "error": "Google Trends engine not configured",
-        }
-    
-    # Build request parameters
+        return _failed("google_trends", "SerpAPI endpoint is missing")
+
     params = {
-        "engine": engine,
-        "q": q,
+        "engine": "google_trends",
+        "q": query.strip(),
         "api_key": api_key,
-        **tool_config.get("request_params", {}),
     }
-    
-    # Make API request
+
     try:
         response = requests.get(endpoint, params=params, timeout=timeout)
         response.raise_for_status()
-        
         data = response.json()
-        
-        # Check for API error
+
         if data.get("error"):
-            return {
-                "tool": "google_trends",
-                "status": "failed",
-                "data": data,
-                "error": str(data["error"]),
-            }
-        
-        # Extract timeline data
+            return _failed("google_trends", str(data["error"]))
+
         if isinstance(data, dict):
-            # Extract from interest_over_time
             if "interest_over_time" in data:
                 timeline = data["interest_over_time"].get("timeline_data", [])
-                return {
-                    "tool": "google_trends",
-                    "status": "success",
-                    "data": timeline if isinstance(timeline, list) else [],
-                    "error": None,
-                }
-            
-            # Extract timeline_data directly
+                return _ok("google_trends", timeline if isinstance(timeline, list) else [])
+
             if "timeline_data" in data:
                 timeline = data["timeline_data"]
-                return {
-                    "tool": "google_trends",
-                    "status": "success",
-                    "data": timeline if isinstance(timeline, list) else [],
-                    "error": None,
-                }
-            
-            # Extract related_queries
+                return _ok("google_trends", timeline if isinstance(timeline, list) else [])
+
             if "related_queries" in data:
                 related = data["related_queries"]
-                return {
-                    "tool": "google_trends",
-                    "status": "success",
-                    "data": related if isinstance(related, list) else [],
-                    "error": None,
-                }
-        
-        return {
-            "tool": "google_trends",
-            "status": "success",
-            "data": [],
-            "error": None,
-        }
-    
+                return _ok("google_trends", related if isinstance(related, list) else [])
+
+        return _ok("google_trends", [])
+
     except requests.exceptions.RequestException as e:
-        logger.exception(f"Google Trends request failed: {e}")
-        return {
-            "tool": "google_trends",
-            "status": "failed",
-            "data": [],
-            "error": str(e),
-        }
-    
+        logger.exception("Google Trends request failed: %s", e)
+        return _failed("google_trends", str(e))
     except Exception as e:
-        logger.exception(f"Google Trends failed: {e}")
-        return {
-            "tool": "google_trends",
-            "status": "failed",
-            "data": [],
-            "error": str(e),
-        }
+        logger.exception("Google Trends failed: %s", e)
+        return _failed("google_trends", str(e))

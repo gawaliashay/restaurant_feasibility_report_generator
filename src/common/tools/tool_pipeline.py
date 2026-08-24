@@ -14,7 +14,6 @@ import logging
 from typing import Any
 
 from src.common.tools.tool_registry import TOOLS
-from src.configuration.config_loader import config_loader
 
 logger = logging.getLogger(__name__)
 
@@ -84,46 +83,14 @@ def run_tool(tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
 
 
 def _validate_params(tool_name: str, params: dict[str, Any]) -> str | None:
-    """
-    Validate required parameters from configuration.
+    query = params.get("query")
+    if not isinstance(query, str) or not query.strip():
+        return "Missing required parameter: 'query'"
 
-    Returns:
-        str | None: Error message if invalid, None if valid.
-    """
-    tool_config = config_loader.get(f"tools.{tool_name}", {})
-
-    if not isinstance(tool_config, dict):
-        return f"Tool configuration not found: {tool_name}"
-
-    # Get required query parameter
-    query_param = tool_config.get("query_parameter")
-
-    if not query_param:
-        return None
-
-    # Check if parameter exists
-    value = params.get(query_param)
-
-    if value is None:
-        return f"Missing required parameter: '{query_param}'"
-
-    # Validate string values
-    if isinstance(value, str) and not value.strip():
-        return f"Parameter '{query_param}' cannot be empty"
-
-    # Validate list values
-    if isinstance(value, list):
-        if not value:
-            return f"Parameter '{query_param}' cannot be empty"
-        if isinstance(value[0], str) and not value[0].strip():
-            return f"Parameter '{query_param}' contains empty string"
-
-    # Validate location parameter for google_maps
-    location_param = tool_config.get("location_parameter")
-    if location_param:
-        location_value = params.get(location_param)
-        if isinstance(location_value, str) and not location_value.strip():
-            return f"Parameter '{location_param}' cannot be empty"
+    if tool_name == "google_maps":
+        location = params.get("location")
+        if not isinstance(location, str) or not location.strip():
+            return "Missing required parameter: 'location'"
 
     return None
 

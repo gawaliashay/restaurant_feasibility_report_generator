@@ -87,7 +87,6 @@ class TestResearchSectionRunner:
                     "queries": {"test_tool": ["test query"]},
                 }
             },
-            "tools.test_tool": {"query_parameter": "query"},
             "resource_limits.mode": "fast",
             "resource_limits.fast": {"max_evidence_chars_per_section": 1000},
         }.get(key, default)
@@ -118,33 +117,6 @@ class TestResearchSectionRunner:
         assert result["status"] == "success"
         assert "evidence" in result
 
-    def test_limit_evidence_by_chars(self):
-        """Test limiting evidence by character count."""
-        runner = ResearchSectionRunner()
-        evidence = [
-            {"content": "Short"},
-            {"content": "This is a longer content item that should be truncated"},
-            {"content": "Another item"},
-        ]
-        result = runner._limit_evidence_by_chars(evidence, max_chars=20)
-        # First item should be included (5 chars)
-        assert len(result) >= 1
-        # Total chars should not exceed 20
-        total_chars = sum(len(item.get("content", "")) for item in result)
-        assert total_chars <= 20
-
-    def test_limit_evidence_by_chars_empty(self):
-        """Test limiting empty evidence list."""
-        runner = ResearchSectionRunner()
-        result = runner._limit_evidence_by_chars([], max_chars=100)
-        assert result == []
-
-    def test_limit_evidence_by_chars_zero(self):
-        """Test limiting with zero max chars."""
-        runner = ResearchSectionRunner()
-        evidence = [{"content": "Test content"}]
-        result = runner._limit_evidence_by_chars(evidence, max_chars=0)
-        assert result == []
 
     @patch("src.workflow.research.research_section_runner.run_tool")
     @patch("src.workflow.research.research_section_runner.config_loader")
@@ -158,7 +130,6 @@ class TestResearchSectionRunner:
                     "queries": {"test_tool": ["test query"]},
                 }
             },
-            "tools.test_tool": {"query_parameter": "query"},
             "resource_limits.mode": "fast",
             "resource_limits.fast": {"max_evidence_chars_per_section": 1000},
         }.get(key, default)
@@ -185,3 +156,5 @@ class TestResearchSectionRunner:
         # Should still succeed with empty evidence if tool fails
         assert result["status"] == "success"
         assert result["evidence"] == []
+        assert result["errors"]
+        assert result["errors"][0]["tool"] == "test_tool"

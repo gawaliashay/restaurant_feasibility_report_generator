@@ -15,11 +15,8 @@ USAGE:
     python -m src.pipeline_runners.tool_pipeline_runner google_trends
     python -m src.pipeline_runners.tool_pipeline_runner rag
 
-    # Test with custom parameters
-    python -m src.pipeline_runners.tool_pipeline_runner tavily_search --params '{"search_query": "momo restaurant Pune market"}'
-
-    # Test with location override
-    python -m src.pipeline_runners.tool_pipeline_runner google_maps --params '{"map_query": "restaurants in Baner", "location": "Pune, Maharashtra, India"}'
+    python -m src.pipeline_runners.tool_pipeline_runner tavily_search --params '{"query": "momo restaurant Pune market"}'
+    python -m src.pipeline_runners.tool_pipeline_runner google_maps --params '{"query": "restaurants in Baner", "location": "Pune, Maharashtra, India"}'
 
     # Test all tools
     python -m src.pipeline_runners.tool_pipeline_runner --all
@@ -80,20 +77,14 @@ def get_test_query(tool_name: str) -> dict:
     concept = business.get("restaurant_concept", "momo Restaurant")
     
     test_queries = {
-        "google_maps": {
-            "map_query": f"{concept} in {local_area}, {city}",
-            "location": f"{city}, {state}, {country}"
-        },
-        "google_trends": {
-            "trend_query": concept
-        },
-        "tavily_search": {
-            "search_query": f"{concept} market demand trends {city} India"
-        },
-        "rag": {
-            "search_query": "FSSAI registration and license requirements for restaurants"
+            "google_maps": {
+                                "query": f"{concept} in {local_area}, {city}",
+                                "location": f"{city}, {state}, {country}",
+                            },
+            "google_trends": {"query": concept},
+            "tavily_search": {"query": f"{concept} market demand trends {city} India"},
+            "rag": {"query": "FSSAI registration and license requirements for restaurants"},
         }
-    }
     
     return test_queries.get(tool_name, {})
 

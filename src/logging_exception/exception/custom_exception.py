@@ -1,109 +1,104 @@
+# src\logging_exception\exception\custom_exception.py
+
+"""
+Custom exception with structured logging and sensitive data masking.
+"""
+
 import os
 import sys
 import logging
-from typing import Optional, Any, Dict, Tuple
+import re
+from typing import Optional, Any, Dict
 from src.logging_exception.logging.logger import logger
 
 
 class CustomException(Exception):
     """
-    Structured custom exception that logs a single, clean JSON entry.
+    Exception that logs a single structured entry with sensitive data masked.
     """
+
+    # Common sensitive field names
+    SENSITIVE_KEYS = {
+        'api_key', 'secret', 'token', 'password', 'passwd', 'key',
+        'auth', 'authorization', 'bearer', 'credential', 'pwd',
+        'access_token', 'refresh_token', 'client_secret', 'private_key'
+    }
 
     def __init__(
         self,
         error_message: str,
         error_details: Optional[Any] = None,
         context: Optional[Dict[str, Any]] = None,
-        include_traceback: Optional[bool] = None,
         log_level: int = logging.ERROR,
     ):
         self.error_message = str(error_message)
-        self.context = context or {}
+        self.context = self._mask_sensitive_data(context or {})
         self.log_level = log_level
 
         # Get exception info
         self.exc_type, self.exc_value, self.exc_tb = self._get_exception_info(error_details)
-        self.root_cause = self.exc_type.__name__ if self.exc_type else "UnknownError"
-        self.cause_message = str(self.exc_value) if self.exc_value else None
 
-        # Get error location
-        self.file_name, self.lineno, self.func_name = self._get_error_location(self.exc_tb)
-
-        # Traceback handling
-        trace_env = os.getenv("LOG_FULL_TRACEBACK", "0") == "1"
-        include_full = include_traceback if include_traceback is not None else trace_env
-        self.traceback = self._format_traceback(self.exc_tb) if include_full and self.exc_tb else None
-
-        # Log only once
+        # Log it
         self._log_exception()
 
         super().__init__(self.error_message)
 
-    def _get_exception_info(self, error_details: Optional[Any]) -> Tuple:
-        """Return (exc_type, exc_value, exc_tb)."""
+    @classmethod
+    def _mask_sensitive_data(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Recursively mask sensitive values in dict."""
+        if not data:
+            return {}
+        
+        masked = {}
+        for key, value in data.items():
+            # Check if this key is sensitive
+            key_lower = key.lower()
+            is_sensitive = (
+                key_lower in cls.SENSITIVE_KEYS or 
+                any(s in key_lower for s in ['pass', 'secret', 'token', 'key', 'auth'])
+            )
+            
+            if is_sensitive and value is not None:
+                # Mask the value
+                if isinstance(value, str) and len(value) > 8:
+                    masked[key] = f"{value[:4]}...{value[-4:]}"
+                else:
+                    masked[key] = '[MASKED]'
+            elif isinstance(value, dict):
+                # Recursively mask nested dicts
+                masked[key] = cls._mask_sensitive_data(value)
+            else:
+                masked[key] = value
+        
+        return masked
+
+    def _get_exception_info(self, error_details):
+        """Extract exception type, value, and traceback."""
         if error_details is None:
             return sys.exc_info()
         if isinstance(error_details, BaseException):
             return type(error_details), error_details, error_details.__traceback__
-        if isinstance(error_details, tuple) and len(error_details) == 3:
-            return error_details
         return None, None, None
 
-    def _get_error_location(self, exc_tb):
-        """Return filename, lineno, func_name for the error location."""
-        if not exc_tb:
-            # Try to get current frame if no traceback
-            try:
-                frame = sys._getframe(2)  # Skip exception init frames
-                return frame.f_code.co_filename, frame.f_lineno, frame.f_code.co_name
-            except:
-                return "<unknown>", -1, "<unknown>"
-        
-        # Get the frame where the error actually occurred
-        tb = exc_tb
-        while tb.tb_next:
-            tb = tb.tb_next
-        frame = tb.tb_frame
-        return frame.f_code.co_filename, tb.tb_lineno, frame.f_code.co_name
-
-    def _format_traceback(self, exc_tb):
-        """Return simplified traceback."""
-        frames = []
-        tb = exc_tb
-        max_frames = 10  # Limit traceback length
-        
-        while tb and len(frames) < max_frames:
-            f = tb.tb_frame
-            frames.append({
-                "file": os.path.basename(f.f_code.co_filename),  # Just filename, not full path
-                "line": tb.tb_lineno,
-                "function": f.f_code.co_name
-            })
-            tb = tb.tb_next
-        
-        return frames
-
     def _log_exception(self):
-        """Emit a single clean structured log entry."""
-        # Base payload - use 'event' for the main message
+        """Log a single structured entry."""
+        # Build log payload
         payload = {
             'event': self.error_message,
-            'error_type': self.root_cause,
-            'location': f"{os.path.basename(self.file_name)}:{self.lineno}:{self.func_name}",
+            'error_type': self.exc_type.__name__ if self.exc_type else "UnknownError",
         }
 
-        # Add context if available
+        # Add masked context
         if self.context:
-            payload.update(self.context)  # Merge context into main payload
-        
-        # Add cause if different from main message
-        if self.cause_message and self.cause_message != self.error_message:
-            payload['cause'] = self.cause_message
-        
-        # Add traceback only if explicitly enabled
-        if self.traceback:
-            payload['traceback'] = self.traceback
+            payload.update(self.context)
+
+        # Add cause if different
+        if self.exc_value and str(self.exc_value) != self.error_message:
+            payload['cause'] = str(self.exc_value)
+
+        # Let structlog handle traceback via exc_info
+        if self.exc_tb and os.getenv("LOG_FULL_TRACEBACK", "0") == "1":
+            payload['exc_info'] = (self.exc_type, self.exc_value, self.exc_tb)
 
         # Log at appropriate level
         if self.log_level >= logging.ERROR:
@@ -114,7 +109,4 @@ class CustomException(Exception):
             logger.info(**payload)
 
     def __str__(self):
-        return f"{self.error_message} ({self.root_cause}) at {os.path.basename(self.file_name)}:{self.lineno}"
-
-    def __repr__(self):
-        return f"CustomException({self.root_cause}: {self.error_message})"
+        return f"{self.error_message} ({self.exc_type.__name__ if self.exc_type else 'Error'})"

@@ -1,456 +1,207 @@
-# src\configuration\prompts.yaml
-
-# ============================================================
-# REPORT SECTION PROMPTS
-# Used by ReportSectionRunner for LLM section generation
-# ============================================================
+# Used by ReportSectionRunner. Keys must match report.sections.*.prompt.
 
 reporting:
 
-  # ==========================================================
-  # COMMON RULES
-  # ==========================================================
-
   common_rules: |
-    EVIDENCE RULES:
-    - Use ONLY the provided retrieved evidence.
-    - Do not introduce external facts or industry assumptions.
-    - Do not create statistics, percentages, market sizes, CAGR,
-      customer counts, revenue estimates, or competitor names.
-    - Preserve exact names, numbers, dates, and sources from evidence.
-    - Separate facts from interpretation.
-
-    INCOMPLETE DATA RULES:
-    - Do NOT write "No specific evidence provided", "Not specified", "Unknown", or "N/A".
-    - If a field is missing, omit it entirely — no placeholders.
-    - If you see "Note:" in the insights, use that information.
-    - Group all missing info in "Data Limitations".
-
-    EMPTY SECTION RULES:
-    - Do not copy prompt questions into the report.
-    - If a subsection has no evidence, OMIT the subsection entirely.
-    - If an entire table column has no values, drop that column.
-    - Do not show empty columns.
-
-    FORMATTING RULES:
-    - Use ## for sections, ### for subsections.
-    - Write a prose paragraph under each ## heading before any bullets or tables.
-    - Do not start a section with a table or bullet list.
-    - Use bullet points (-) for lists only, not for paragraph content.
-    - Use **bold** sparingly for emphasis — never as a heading or label.
-    - Use ### for sub-labels (e.g. ### Pricing Tiers), not **Pricing Tiers:**
-    - Write in clear, professional business language.
-
-    CITATION RULES:
-    - End each section with an italic citation: *Sources: source1, source2*
-    - List every distinct source used (tool names, PDF filenames, website titles).
-    - Do NOT cite a source unless you actually used evidence from it.
-    - Do NOT write only "google_trends" when you also used google_maps, tavily, or PDF data.
-
-    QUALITY RULES:
-    - Be concise and specific; no filler or repetition.
-    - Use exact figures from evidence when citing numbers.
-    - Clearly identify uncertainty where evidence is limited.
-
-  # ==========================================================
-  # MARKET ANALYSIS PROMPT
-  # ==========================================================
+    Use only Insights. Do not invent names, numbers, dates, fees, or market sizes.
+    Prefer Maps rows and legal/PDF text over social posts and national TAM.
+    Skip other-country dining surveys unless they name this city.
+    Omit missing fields. Never write N/A, Unknown, or Not specified.
+    Empty table cell if one row lacks a value. Drop a column only if every row would be empty.
+    Copy the ## titles below exactly. Omit a title if that block has no facts.
+    Short prose under each ##, then bullets for names, numbers, licenses, risks, and checklists.
+    Numbered lists only for sequenced actions. Do not repeat the same fact twice.
+    End each ## with *Sources: label1, label2* (at most 5: domains or PDFs).
+    Maps place names belong in tables, not citations. No bibliography.
+    If Insights are rich, write a complete owner briefing — not a sketch.
 
   market_analysis_prompt: |
-    You are a restaurant market research analyst synthesizing evidence from multiple sources.
+    Demand briefing for this concept. No competitor table.
 
-    Restaurant Concept: {restaurant_concept}
+    Concept: {restaurant_concept}
     Location: {local_area}, {city}, {state}
-    Target Customers: {target_demographic}
+    Owner intent (not a census fact): {target_demographic}
 
-    Retrieved Market Insights:
+    Insights:
     {section_insights}
 
     {common_rules}
 
-    CRITICAL INSTRUCTIONS:
-    - You have data from Google Trends, Tavily Search, and other tools.
-    - Look for numerical data, trends, and market size information.
-    - If multiple sources mention similar trends, combine them.
-    - For Google Trends data, mention specific scores and time periods.
-    - Do NOT lead with a raw list of weekly scores — summarize the pattern first.
-
-    Generate these sections:
-
     ## Market Overview
-    Summarize overall demand, trend direction, and what it means for this concept.
-    Then add supporting detail:
-    - Google Trends data: specific scores, time periods, trend direction
-    - Market size or growth rate mentioned in evidence
-    - Overall demand signal for the restaurant concept and target demographic
+    Demand for this cuisine/format here, or India if that is all Insights give.
 
-    ### Data Limitations
-    Maximum 2 bullets.
+    ## Demand Signals
+    Bullets. Trends: pattern, typical range, date span — not every week. Other local demand facts.
+    Do not treat frozen-food or nationwide TAM as local momo demand.
 
-  # ==========================================================
-  # COMPETITIVE ANALYSIS PROMPT
-  # ==========================================================
+    ## Implications for Opening
+    Bullets: dine-in vs delivery, timing, whether demand supports opening.
 
   competitive_analysis_prompt: |
-    You are a restaurant competition analyst.
+    On-the-ground competitors.
 
     Concept: {restaurant_concept}
     Location: {local_area}, {city}, {state}
 
-    Retrieved Competitor Insights:
+    Insights:
     {section_insights}
 
     {common_rules}
 
-    CRITICAL INSTRUCTIONS:
-    - Use ALL competitor data from Google Maps and Tavily Search.
-    - Extract ratings, reviews, price points, and service types.
-    - Identify patterns and gaps.
-    - Include specific numbers from evidence.
-    - The competitor count in your text MUST match the number of rows in the table.
-
-    Generate these sections:
+    Prefer Maps. Merge duplicate names; keep Maps rating/reviews when both exist.
 
     ## Competitor Landscape
-    Describe the competitive landscape: how many competitors, price range spread, dominant service types, and standout names.
+    Short prose: count, price spread, common services, standouts.
+    Then a table of every remaining competitor: Name | Rating | Reviews | Price | Services.
+    If a value is missing, leave the cell blank — never N/A. Prose count must match rows.
 
-    Then provide a markdown table with ALL competitors found:
+    ## Pricing and Services
+    Bullets: budget / mid / premium from stated prices; dominant services.
 
-    | Name | Category | Rating | Reviews | Price (for two) | Services |
-    |------|----------|--------|---------|-----------------|----------|
-
-    Fill cells only with values present in evidence (including extra fields such as rating, reviews, price).
-    If a column is empty for every competitor, omit that column.
-    Do not invent values.
-
-    After the table, provide a paragraph summarizing:
-    - Total competitors found (must match table row count)
-    - Most common service types
-    - Any notable competitors with ratings or review counts
-
-    ## Market Positioning Analysis
-
-    ### Pricing Tiers
-    Summarize pricing tiers mentioned in evidence (Budget, Mid-range, Premium) with competitor counts in each tier.
-
-    ### Service Types
-    List the most common service types among competitors.
-
-    ### Differentiation Gaps
-    Note any positioning gaps or opportunities visible from the data.
-
-    ### Data Limitations
-    Maximum 2 bullets.
-
-  # ==========================================================
-  # CUSTOMER DEMOGRAPHICS PROMPT
-  # ==========================================================
-
-  customer_demographics_prompt: |
-    You are analyzing customer demographics for a restaurant owner.
-
-    Location: {local_area}, {city}, {state}
-    Target: {target_demographic}
-
-    Retrieved Insights:
-    {section_insights}
-
-    {common_rules}
-
-    Generate ONLY these sections. Do not add extra sections.
-
-    ## Population Profile
-    Describe population size, density, and age profile from evidence.
-    Then list supporting facts:
-    - Population and density figures mentioned in evidence
-    - Age groups mentioned in evidence
-    - Income levels mentioned in evidence
-    - Occupation types mentioned in evidence
-
-    ## Implications for Restaurant Owner
-    Explain what this demographic means for the restaurant.
-    Based on customer profile:
-    - Menu preferences or dietary patterns mentioned in evidence
-    - Price sensitivity or price points mentioned in evidence
-    - Operating hours or peak times mentioned in evidence
-
-    ### Data Limitations
-    Maximum 2 bullets.
-
-  # ==========================================================
-  # LOCATION ANALYSIS PROMPT
-  # ==========================================================
+    ## Positioning Gaps
+    Bullets — only what the table shows.
 
   location_analysis_prompt: |
-    You are a location analyst evaluating restaurant site viability.
+    Site viability. Do not paste the competitor table.
 
     Location: {local_area}, {city}, {state}
 
-    Retrieved Insights:
+    Insights:
     {section_insights}
 
     {common_rules}
 
-    Generate ONLY these sections. Do not add extra sections.
+    Name malls, campuses, offices, and roads that appear.
 
     ## Accessibility
-    Describe how customers can reach the site.
-    - Road connectivity and visibility mentioned in evidence
-    - Public transport access mentioned in evidence
-    - Parking availability mentioned in evidence
+    Short prose, then bullets: roads, transit, parking, congestion as stated; dine-in vs delivery.
+
+    ## Nearby Anchors
+    Bullets: named places and why they matter for footfall.
 
     ## Location Assessment
-    Assess overall site suitability for a restaurant.
-    - Key strengths mentioned in evidence (foot traffic, nearby anchors, institutions)
-    - Potential challenges or competition nearby mentioned in evidence
-    - Overall suitability verdict based on evidence
+    Short prose: strengths, stated challenges, suitability.
+    Then bullets: 4–6 owner site-visit checks from the evidence (not city engineering).
 
-    ### Data Limitations
-    Maximum 2 bullets.
+  customer_demographics_prompt: |
+    Who lives here. Do not treat "{target_demographic}" as measured unless Insights agree.
 
-  # ==========================================================
-  # COMPLIANCE REQUIREMENTS PROMPT
-  # ==========================================================
+    Location: {local_area}, {city}, {state}
+
+    Insights:
+    {section_insights}
+
+    {common_rules}
+
+    Lead with locality figures (area, population, density) when present.
+
+    ## Population Profile
+    Short prose, then bullets: size, density, age, language, governance. Mark city-wide vs locality.
+
+    ## Key Insights
+    Bullets: what those numbers imply for daytime vs evening trade. Do not invent income.
+
+    ## Implications for the Owner
+    Bullets: menu, hours, or price only where Insights support it.
 
   compliance_requirements_prompt: |
-    You are a restaurant compliance specialist.
+    What the owner must obtain and obey. Skip liquor/school/hotel rules unless they apply here.
 
     Concept: {restaurant_concept}
     Location: {city}, {state}
 
-    Regulatory Insights:
+    Insights:
     {section_insights}
 
     {common_rules}
 
-    Generate ONLY these sections. Do not add extra sections.
+    Use a heading only when Insights support it.
 
     ## Compliance Overview
-    Summarize the regulatory framework and key requirements from evidence.
+    Short prose.
 
-    ## Required Licenses and Permits
-    use bullets.
-    Write only details that appear in evidence. Omit any missing detail.
+    ## Required Licenses
+    Bullets: license name and any stated condition.
 
-    ## Operational Compliance
-    Cover working hours, staffing, health and safety, and renewal only where evidence exists.
+    ## Hours and Staffing
+    Bullets.
 
-    ## Penalties and Fines
-    List violations, amounts, and consequences only as stated in evidence.
+    ## Penalties
+    Bullets: amounts and triggers.
 
     ## Regulatory Authorities
-    List authorities and their roles from evidence.
+    Bullets: who issues what.
 
-    ## Compliance Timeline
-    List processing times and renewal cycles from evidence.
+    ## Timeline
+    Bullets: processing and validity.
 
-    ## Compliance Checklist for Owner
-    Numbered actions from evidence.
-
-    ### Data Limitations
-    Maximum 2 bullets.
-
-  # ==========================================================
-  # RISK ASSESSMENT PROMPT
-  # ==========================================================
+    ## Owner Checklist
+    Numbered, in a sensible order.
 
   risk_assessment_prompt: |
-    You are a risk analyst synthesizing across ALL research sections.
+    Drafted section reports, not raw tools. Omit a category with no fact.
+    Do not invent typical restaurant risks. Do not compare {investment} to "price for two".
 
-    Business Context:
     Concept: {restaurant_concept}
     Location: {local_area}, {city}
     Investment: {investment}
 
-    ALL Research Evidence (from market, competitive, location, demographics, compliance):
+    Section reports:
     {section_insights}
 
     {common_rules}
 
-    MANDATORY RULES — FOLLOW EXACTLY:
-    1. Read ALL the evidence above. It contains data from google_trends, google_maps, tavily, and PDFs.
-    2. A risk is ONLY valid if you can quote or paraphrase specific evidence for it.
-    3. Do NOT write risks based on "general industry knowledge" or "common restaurant challenges".
-    4. Do NOT write "No specific evidence was provided" or "While specific risks are not detailed" — ever.
-    5. Every risk bullet MUST have an Evidence field with a direct quote or paraphrase from the evidence.
-    6. The *Sources* line MUST list every source you actually referenced.
-
-    You MUST generate ALL four risk categories below. Each category has evidence — find it.
+    Each risk as bullets: Description. Evidence (from a report). Severity High/Medium/Low.
+    Mitigation the owner can do (not city signals). Prefer 2–3 evidenced risks per category you keep.
 
     ## Market Risks
-    Based on google_trends and competitive evidence:
-    - Demand fluctuation (cite trend scores and dates)
-    - Competitive threats (cite competitor names, ratings, review counts)
-    - Market saturation (cite number of competitors found)
-    - For each risk: Description, Evidence, Severity (High/Medium/Low), Mitigation
+    Demand, named competitors, saturation from stated counts.
 
     ## Location Risks
-    Based on location_analysis evidence (nearby places, malls, colleges, roads):
-    - Dependence on anchor establishments for footfall (cite mall names, college names)
-    - Competition density near the site (cite nearby competitor count)
-    - Accessibility or parking challenges (cite road names or transport data)
-    - For each risk: Description, Evidence, Severity (High/Medium/Low), Mitigation
+    Congestion, parking, named anchors.
 
     ## Operational Risks
-    Based on compliance_requirements evidence (licenses, regulations, penalties):
-    - Licensing delays (cite processing times)
-    - Food safety compliance burden (cite FSSAI requirements)
-    - Penalty exposure (cite specific penalty amounts or imprisonment terms)
-    - For each risk: Description, Evidence, Severity (High/Medium/Low), Mitigation
+    License time, hours, food-safety / penalty facts.
 
     ## Financial Risks
-    Based on compliance AND competitive evidence:
-    - Investment adequacy vs. licensing costs (cite {investment} against compliance requirements)
-    - Pricing pressure from budget competitors (cite competitor price ranges)
-    - Hidden regulatory costs (cite specific fees or prerequisites)
-    - For each risk: Description, Evidence, Severity (High/Medium/Low), Mitigation
+    Ticket prices vs this concept; stated fees vs {investment} only if costs appear.
 
     ## Overall Risk Summary
-    - High risks: [List or None]
-    - Medium risks: [List or None]
-    - Low risks: [List or None]
-
-  # ==========================================================
-  # STRATEGIC RECOMMENDATIONS PROMPT
-  # ==========================================================
+    Bullets: High / Medium / Low. Omit empty lines.
+    *Sources: section report titles used*
 
   strategic_recommendations_prompt: |
-    You are a restaurant business strategy consultant.
+    What to do next. Do not reprint the competitor table or full license list.
+    Every point names a fact from the reports.
 
-    Business Context:
     Concept: {restaurant_concept}
     Location: {local_area}, {city}
+    Investment: {investment}
 
-    Research Insights from ALL sections (market, competitive, location, demographics, compliance):
+    Section reports:
     {section_insights}
 
     {common_rules}
 
-    MANDATORY RULES — FOLLOW EXACTLY:
-    1. Read ALL the evidence above. It contains data from google_trends, google_maps, tavily, and PDFs.
-    2. Every recommendation MUST reference specific evidence (competitor names, location names, demographic figures, compliance requirements).
-    3. Do NOT give generic advice like "conduct market research" without tying it to specific evidence.
-    4. The *Sources* line MUST list every source type you actually referenced.
-
-    Generate ONLY these sections. Do not add extra sections.
-
     ## Strategic Opportunities
-    Describe the biggest evidence-backed opportunities.
-    Then list practical opportunities, each tied to specific research findings:
-    - Supported by specific research evidence
-    - Practical to execute
+    Bullets, each tied to a report fact.
 
     ## Recommended Positioning
-
-    ### Target Audience
-    Who to serve, based on demographics and location evidence.
-
-    ### Unique Selling Proposition
-    What makes it special, based on competitive gaps in evidence.
-
-    ### Pricing Strategy
-    What to charge, based on competitor price tiers from evidence.
-
-    ### Brand Identity
-    How to present the concept, aligned with target demographic and location.
+    Bullets: guests (intent vs data); difference vs named competitors; price band from stated prices; dine-in vs delivery from traffic and service mix.
 
     ## Action Plan
-    Numbered, actionable steps prioritized by importance. Each step must reference specific evidence.
+    Numbered steps in three groups, each step naming a report fact.
+    ### Before Lease
+    Licenses, site checks, competitors to visit.
+    ### Launch
+    Menu/price vs the table; delivery if congestion is stated.
+    ### First 90 Days
+    What to watch.
+    Do not assign municipal traffic work to the owner.
 
-    ## Success Factors
-    - Capabilities required
-    - Resources needed
-    - Key risks to watch (from evidenced risks only)
+    ## Watch-outs
+    Bullets — evidenced risks only.
 
-    ### Data Limitations
-    Maximum 2 bullets.
-
-# ============================================================
-# FINAL REPORT PROMPT
-# ============================================================
-
-  final_report_prompt:
-    executive_summary: |
-      You are preparing an executive summary for a restaurant feasibility report.
-
-      Business Context:
-      Concept: {restaurant_concept}
-      Location: {local_area}, {city}, {state}
-      Investment: {investment}
-
-      Research Insights:
-      {section_insights}
-
-      {common_rules}
-
-      Create a concise executive summary covering:
-
-      ## Market Opportunity
-      - Potential market opportunity mentioned in evidence.
-
-      ## Competitive Position
-      - Competitors mentioned in evidence.
-      - Market positioning mentioned in evidence.
-
-      ## Financial View
-      - Investment adequacy
-      - Pricing insights from competition
-
-      ## Key Risks
-      - Risks mentioned in evidence.
-
-      #### Data Limitations
-      Maximum 2 bullets.
-
-      ## Recommendation
-      - GO / CONDITIONAL GO / NO GO
-
-      Use only available evidence. Be honest about gaps.
-
-    conclusion: |
-      You are preparing the final conclusion of a restaurant feasibility assessment.
-
-      Business Context:
-      Concept: {restaurant_concept}
-      Location: {local_area}, {city}
-
-      Available Findings:
-      {section_insights}
-
-      {common_rules}
-
-      Evaluate:
-
-      ## Overall Assessment
-      Synthesize all evidence into an assessment.
-
-      ## Recommendation
-      Provide one recommendation:
-      GO / CONDITIONAL GO / NO GO
-      Justify the recommendation using evidence only.
-
-      ## Next Steps
-      Provide actionable next steps for the restaurant owner.
-
-# ============================================================
-# REPORT TEMPLATE
-# ============================================================
-
-report_template:
-
-  final_report_template: |
-    # RESTAURANT BUSINESS FEASIBILITY REPORT
-
-    Concept:
-    {restaurant_concept}
-
-    Location:
-    {local_area}, {city}, {state}, {country}
-
-    Investment:
-    {investment}
-
-    Date:
-    {timestamp}
-
-    {report_sections}
+    ## Recommendation
+    One line: GO / CONDITIONAL GO / NO GO, justified by the reports.
+    *Sources: section report titles*

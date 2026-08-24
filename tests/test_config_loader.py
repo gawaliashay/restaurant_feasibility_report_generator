@@ -166,7 +166,8 @@ class TestConfigLoader:
         sections = loader.get("report.sections", {})
         assert isinstance(sections, dict)
 
-    def test_get_tool_config(self):
+    def test_get_tavily_settings(self):
         loader = ConfigLoader()
-        config = loader.get("tools.tavily_search", {})
+        config = loader.get("apis.tavily", {})
         assert isinstance(config, dict)
+        assert config.get("max_results") == 5

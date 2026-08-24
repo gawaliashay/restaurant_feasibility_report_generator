@@ -4,40 +4,39 @@
 Evidence Processor.
 
 Convert raw tool results into standardized evidence.
-Tool-agnostic - works with any tool.
+Also: dedupe, rank, cap length, and collect sources.
 """
 
 from typing import Any
+from urllib.parse import urlparse
+
+from src.common.schemas import EvidenceItem
 from src.configuration.config_loader import config_loader
 
+MAX_SOURCE_CHARS = 80
 
-# ============================================================
-# FIELD DEFINITIONS
-# ============================================================
 
 CONTENT_FIELDS = ["content", "text", "snippet", "description", "title", "name", "rating", "reviews", "price"]
 TITLE_FIELDS = ["title", "name"]
 URL_FIELDS = ["url", "link", "website"]
 SOURCE_FIELDS = ["source", "source_name", "type", "category"]
-EXTRA_FIELDS = ["rating", "reviews", "price", "address", "hours", "score", "document_name", "date", "value"]
+EXTRA_FIELDS = [
+    "rating", "reviews", "price", "address", "hours", "score",
+    "document_name", "date", "value", "chunk_index",
+]
 
 
 class EvidenceProcessor:
     """Convert raw tool results into standardized evidence."""
 
-    def __init__(self) -> None:
-        # No config loading here - lazy load in process()
-        pass
-
     def process(self, tool_name: str, query: str, results: Any) -> list[dict[str, Any]]:
-        """Convert raw tool results into standardized evidence."""
+        """Convert raw tool results into EvidenceItem dicts."""
         if not results:
             return []
 
         if not isinstance(results, list):
             results = [results] if isinstance(results, dict) else []
 
-        # Lazy load config at point of use
         mode = config_loader.get("resource_limits.mode", "fast")
         limits = config_loader.get(f"resource_limits.{mode}", {})
         max_text_per_result = limits.get("max_text_per_result", 300)
@@ -49,11 +48,10 @@ class EvidenceProcessor:
                 continue
 
             content = self._get_content(item)
-
             if not content:
                 continue
 
-            evidence.append({
+            raw = {
                 "tool": tool_name,
                 "query": query,
                 "source": self._get_source(item, tool_name),
@@ -61,13 +59,106 @@ class EvidenceProcessor:
                 "url": self._get_url(item),
                 "content": content[:max_text_per_result],
                 "extra": self._get_extra(item),
-            })
+            }
+            evidence.append(EvidenceItem.model_validate(raw).model_dump())
 
         return evidence
 
+    @staticmethod
+    def dedupe(evidence: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Drop duplicates. Key includes content so RAG chunks from one PDF stay distinct."""
+        seen: set[str] = set()
+        unique: list[dict[str, Any]] = []
+
+        for item in evidence:
+            key = (
+                f"{item.get('source', '')}:"
+                f"{item.get('title', '')}:"
+                f"{item.get('content', '')[:80]}"
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            unique.append(item)
+
+        return unique
+
+    @staticmethod
+    def sort_by_score(evidence: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Highest score first. Items without a score go last."""
+
+        def score_key(item: dict[str, Any]) -> tuple[int, float]:
+            score = (item.get("extra") or {}).get("score")
+            if score is None:
+                return (0, 0.0)
+            return (1, float(score))
+
+        return sorted(evidence, key=score_key, reverse=True)
+
+    @staticmethod
+    def limit_by_chars(
+        evidence: list[dict[str, Any]],
+        max_chars: int,
+    ) -> list[dict[str, Any]]:
+        """Keep items until the total content length hits max_chars."""
+        if not evidence or max_chars <= 0:
+            return []
+
+        limited: list[dict[str, Any]] = []
+        total_chars = 0
+
+        for item in evidence:
+            content = item.get("content", "")
+            remaining = max_chars - total_chars
+            if remaining <= 0:
+                break
+
+            item_copy = item.copy()
+            item_copy["content"] = content[:remaining]
+            limited.append(item_copy)
+            total_chars += len(item_copy["content"])
+
+        return limited
+
+    @staticmethod
+    def _clip_source(text: str, max_chars: int = MAX_SOURCE_CHARS) -> str:
+        """First line only, capped so citations cannot dump a social caption."""
+        text = (text or "").strip()
+        if not text:
+            return ""
+        text = text.split("\n", 1)[0].strip()
+        if len(text) <= max_chars:
+            return text
+        return text[: max_chars - 3].rstrip() + "..."
+
+    @staticmethod
+    def _hostname(url: str) -> str:
+        if not url:
+            return ""
+        host = urlparse(url).netloc.lower()
+        if host.startswith("www."):
+            host = host[4:]
+        return host
+
+    @staticmethod
+    def collect_sources(evidence: list[dict[str, Any]]) -> list[str]:
+        """Unique short source labels, falling back to tool name."""
+        sources: list[str] = []
+        seen: set[str] = set()
+
+        for item in evidence:
+            name = EvidenceProcessor._clip_source(
+                item.get("source") or item.get("tool") or ""
+            )
+            if not name or name in seen:
+                continue
+            seen.add(name)
+            sources.append(name)
+
+        return sources
+
     def _get_content(self, item: dict[str, Any]) -> str:
         """Extract main textual content."""
-        # Google Trends (values list)
         if "values" in item and isinstance(item["values"], list):
             parts = []
             for v in item["values"]:
@@ -130,26 +221,29 @@ class EvidenceProcessor:
         return ""
 
     def _get_source(self, item: dict[str, Any], tool_name: str) -> str:
-        """Extract source information."""
+        """Short citation label. Never a full snippet or social caption."""
+        if tool_name == "google_maps":
+            return "google_maps"
+
         metadata = item.get("metadata", {})
         if isinstance(metadata, dict) and metadata.get("document_name"):
-            return str(metadata["document_name"]).strip()
+            return self._clip_source(str(metadata["document_name"]))
+
+        host = self._hostname(self._get_url(item))
+        if host:
+            return host
 
         title = item.get("title") or item.get("name")
         if title:
-            return str(title).strip()
+            return self._clip_source(str(title))
 
         for field in SOURCE_FIELDS:
             value = item.get(field)
             if value:
-                return str(value).strip()
-
-        url = self._get_url(item)
-        if url:
-            return url
+                return self._clip_source(str(value))
 
         if item.get("query"):
-            return str(item["query"]).strip()
+            return self._clip_source(str(item["query"]))
 
         return tool_name
 

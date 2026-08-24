@@ -1,31 +1,37 @@
-# src\workflow\report\report_exporter.py
+# src/workflow/report/report_exporter.py
 
 """
-Report Exporter.
+Write the compiled report to markdown and JSON.
 """
 
+import json
 import os
 from datetime import datetime
 
-from src.utils.report_exporter import save_json_generic, save_markdown_generic
-
 
 def export_report(report: str, state: dict) -> dict:
-    """Export report to MD and JSON using existing utilities."""
+    """Export report to MD and JSON. Returns {md: path, json: path}."""
     os.makedirs("reports", exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     base = f"reports/report_{timestamp}"
 
     md_path = f"{base}.md"
-    save_markdown_generic(report, md_path)
+    with open(md_path, "w", encoding="utf-8") as f:
+        f.write(report)
 
     json_path = f"{base}.json"
-    save_json_generic({
-        "timestamp": datetime.now().isoformat(),
-        "report": report,
-        "concept": state.get("restaurant_concept"),
-        "location": f"{state.get('local_area')}, {state.get('city')}",
-    }, json_path)
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "timestamp": datetime.now().isoformat(),
+                "report": report,
+                "concept": state.get("restaurant_concept"),
+                "location": f"{state.get('local_area')}, {state.get('city')}",
+            },
+            f,
+            indent=2,
+            ensure_ascii=False,
+        )
 
     return {"md": md_path, "json": json_path}

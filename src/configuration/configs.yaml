@@ -1,45 +1,14 @@
-# src\configuration\configs.yaml
-
-# ============================================================
-# PATHS & DIRECTORIES
-# ============================================================
-
-paths:
-  data: ${DATA_PATH}
-  vector_store: ${VECTOR_STORE_PATH}
-  reports: ${REPORTS_DIRECTORY}
-  logs_dir: logs/
-
-
-# ============================================================
-# APPLICATION
-# ============================================================
-
-app:
-  name: ${PROJECT_NAME}
-  env: ${ENV}
-  host: ${HOST}
-  port: ${PORT}
-  cors_origins: ${ALLOWED_ORIGINS}
-
-
-# ============================================================
-# API KEYS
-# ============================================================
+# src/configuration/configs.yaml
 
 apis:
   tavily:
     api_key: ${TAVILY_API_KEY}
+    max_results: 5
 
   serpapi:
     api_key: ${SERPAPI_API_KEY}
     endpoint: ${SERPAPI_ENDPOINT}
     timeout: ${SERPAPI_TIMEOUT}
-
-
-# ============================================================
-# BUSINESS CASE - LOCAL DEVELOPMENT
-# ============================================================
 
 business_case:
   default:
@@ -54,11 +23,6 @@ business_case:
     investment: "₹350,000"
     target_demographic: "Professionals 25-45, health-conscious"
     special_note: "momo demand, spending power, competition density"
-
-
-# ============================================================
-# RESEARCH - Evidence Collection (All Independent)
-# ============================================================
 
 research:
   sections:
@@ -127,18 +91,13 @@ research:
           - "Maharashtra restaurant municipal trade license and Fire NOC"
           - "restaurant eating house and music license requirements India"
 
-
-# ============================================================
-# REPORT - Analysis & Synthesis
-# ============================================================
-
 report:
   sections:
     market_report:
       enabled: true
       title: Market Analysis Report
       prompt: market_analysis_prompt
-      research_section: market_analysis      # ← Add this
+      research_section: market_analysis
       dependencies: []
 
     competitive_report:
@@ -159,7 +118,7 @@ report:
       enabled: true
       title: Customer Demographics Report
       prompt: customer_demographics_prompt
-      research_section: customer_demographics      # ← Explicit
+      research_section: customer_demographics
       dependencies: []
 
     compliance_report:
@@ -173,7 +132,7 @@ report:
       enabled: true
       title: Risk Assessment
       prompt: risk_assessment_prompt
-      research_section: null      # ← null = cross-section
+      research_section: null
       dependencies:
         - market_report
         - competitive_report
@@ -185,65 +144,11 @@ report:
       enabled: true
       title: Strategic Recommendations
       prompt: strategic_recommendations_prompt
-      research_section: null      # ← null = cross-section
+      research_section: null
       dependencies:
         - risk_assessment
-
-    final_compilation:
-      enabled: false
-      title: Complete Research Report
-      dependencies:
-        - market_report
-        - competitive_report
-        - location_report
-        - demographics_report
-        - compliance_report
-        - risk_assessment
-        - strategic_recommendations
-
-
-# ============================================================
-# EXPORT - Separate from Report Sections
-# ============================================================
-
-export:
-  enabled: true
-  formats:
-    - md
-    - json
-  output_dir: reports
-  timestamp_format: "%Y%m%d_%H%M%S"
-
-
-# ============================================================
-# TOOL CONFIGURATION
-# ============================================================
-
-tools:
-  google_maps:
-    query_parameter: map_query
-    location_parameter: location
-    location_template: "{city}, {state}, {country}"
-    engine: google_local
-
-  tavily_search:
-    query_parameter: search_query
-    max_results: 5
-
-  google_trends:
-    query_parameter: trend_query
-    engine: google_trends
-
-  rag:
-    query_parameter: search_query
-
-
-# ============================================================
-# LLM MODELS
-# ============================================================
 
 defaults:
-  fast_llm: groq
   analysis_llm: openai
 
 models:
@@ -262,133 +167,37 @@ models:
       temperature: 0.3
       max_tokens: 1024
 
-
-# ============================================================
-# RESOURCE LIMITS - Control data, token, and API consumption
-# ============================================================
-
-# src/configuration/configs.yaml
-
 resource_limits:
-  # Available modes: fast, balanced, quality
-  mode: "quality"   # ← CHANGE THIS
+  mode: quality
 
-  # ----- FAST MODE -----
   fast:
-    # Research phase - evidence collection
     max_evidence_chars_per_section: 2000
     max_tool_results_per_section: 10
-    max_tool_results_cross_section: 25
     max_text_per_result: 300
-
-    # RAG phase - document retrieval
-    max_chars_per_rag_chunk: 300
-    max_rag_chunks_per_section: 4
-
-    # Report synthesis phase
     max_summary_chars_for_sections: 500
-    max_llm_output_tokens: 1024
-    max_citation_chars: 1500
     max_evidence_chars_for_final_report: 6000
 
-  # ----- BALANCED MODE -----
   balanced:
-    # Research phase - evidence collection
     max_evidence_chars_per_section: 3000
     max_tool_results_per_section: 12
-    max_tool_results_cross_section: 35
     max_text_per_result: 400
-
-    # RAG phase - document retrieval
-    max_chars_per_rag_chunk: 400
-    max_rag_chunks_per_section: 5
-
-    # Report synthesis phase
     max_summary_chars_for_sections: 600
-    max_llm_output_tokens: 1536
-    max_citation_chars: 2000
     max_evidence_chars_for_final_report: 8000
 
-  # ----- QUALITY MODE -----
   quality:
-    # Research phase - evidence collection
-    max_evidence_chars_per_section: 6000    # More chars per section
-    max_tool_results_per_section: 15        # More items per tool
-    max_tool_results_cross_section: 50
-    max_text_per_result: 300                # More text per result
-
-    # RAG phase - document retrieval
-    max_chars_per_rag_chunk: 500
-    max_rag_chunks_per_section: 4
-
-    # Report synthesis phase
-    max_summary_chars_for_sections: 800     # More summary per section
-    max_llm_output_tokens: 2048             # More LLM output
-    max_citation_chars: 3000
+    max_evidence_chars_per_section: 6000
+    max_tool_results_per_section: 15
+    max_text_per_result: 300
+    max_summary_chars_for_sections: 800
     max_evidence_chars_for_final_report: 10000
 
-
-# ============================================================
-# REPORTING SETTINGS
-# ============================================================
-
 reporting:
-  save_to_file: true
-  reports_directory: "reports"
-  create_backup: true
-  save_formats:
-    - md
-    - json
-  max_concurrent_requests: 1
-  empty_evidence_message: "No evidence available."
-
-  citation_fields:
-    - url
-    - source
-    - document_name
-    - title
-    - reference
-
-  rate_limit_indicators:
-    - "rate limit"
-    - "too many requests"
-    - "429"
-    - "quota exceeded"
-
   retry:
     max_retries: 3
     backoff_seconds: 1.0
-    max_backoff_seconds: 30.0
-    retry_after_pattern: "retry-after:\\s*(\\d+)"
-    retry_after_buffer_seconds: 1.0
-
-
-# ============================================================
-# MONITORING
-# ============================================================
-
-monitoring:
-  langsmith:
-    api_key: ${LANGCHAIN_API_KEY}
-    project: ${PROJECT_NAME}
-    tracing: ${LANGCHAIN_TRACING_V2}
-
-
-# ============================================================
-# WORKFLOW
-# ============================================================
-
-workflow:
-  approval_mode: manual
-
-
-# ============================================================
-# RAG: TEXT SPLITTING
-# ============================================================
 
 rag_splitting:
   default_strategy: recursive_character
-
   recursive_character:
     chunk_size: 1024
     chunk_overlap: 100
@@ -398,156 +207,37 @@ rag_splitting:
       - ". "
       - " "
       - ""
-    description: "Best for PDFs, plain text"
-
-  markdown_language_splitter:
-    chunk_size: 1024
-    chunk_overlap: 100
-    separators:
-      - "\n#{1,6} "
-      - "\n```\n"
-      - "\n\\*\\*\\*\n"
-      - "\n---\n"
-      - "\n___\n"
-      - "\n\n"
-      - "\n"
-      - " "
-      - ""
-    is_separator_regex: true
-    description: "Best for websites, markdown"
-
-  recursive_character_small:
-    chunk_size: 512
-    chunk_overlap: 50
-    separators:
-      - "\n\n"
-      - "\n"
-      - ". "
-      - " "
-      - ""
-    description: "Smaller chunks for precise retrieval"
-
-
-# ============================================================
-# RAG: EMBEDDINGS
-# ============================================================
 
 rag_embeddings:
   default: openai
-
-  huggingface:
-    model_name: sentence-transformers/all-MiniLM-L6-v2
-    dimensions: 384
-    import_path: langchain_huggingface.HuggingFaceEmbeddings
-
   openai:
     model_name: text-embedding-3-small
     dimensions: 1536
     import_path: langchain_openai.OpenAIEmbeddings
     api_key: ${OPENAI_API_KEY}
 
-  google:
-    model_name: models/embedding-001
-    dimensions: 768
-    import_path: langchain_google_genai.GoogleGenerativeAIEmbeddings
-    api_key: ${GOOGLE_API_KEY}
-
-
-# ============================================================
-# RAG: VECTOR STORES
-# ============================================================
-
 rag_vectorstores:
   default: qdrant
-
   qdrant:
     url: ${QDRANT_URL}
     api_key: ${QDRANT_API_KEY}
     collection_name: restaurant_compliance-rag
-
-  faiss:
-    persist_directory: data/faiss_store
-
-  chroma:
-    persist_directory: data/chroma_store
-
-
-# ============================================================
-# RAG: RETRIEVAL
-# ============================================================
 
 rag_retrieval:
   top_k: 4
   score_threshold: 0.3
   max_chars_per_chunk: 500
 
-
-# ============================================================
-# RAG: DATA SOURCES
-# ============================================================
-
 rag_sources:
   local_pdfs:
     - path: "data/raw/base_docs/Legal_&_Regulatory_Handbook_for_Restaurants_and_Cafés.pdf"
       title: "Legal & Regulatory Handbook for Restaurants and Cafés"
       description: "Comprehensive compliance guide for restaurants in India"
-
   websites:
     - url: "https://www.indiafilings.com/learn/maharashtra-shops-and-establishment-act"
       title: "Maharashtra Shops and Establishment Act"
       description: "Regulations for shops and establishments in Maharashtra"
-
   online_pdfs:
     - url: "https://fssai.gov.in/docs/food-law/act-2006/Food_Safety_and_Standards_Act_2006.pdf"
       title: "Food Safety and Standards Act, 2006"
       description: "Primary food safety legislation for India"
-
-
-# ============================================================
-# EVALUATION
-# ============================================================
-
-evaluation:
-  enabled: true
-
-  evaluators:
-    workflow:
-      enabled: true
-      provider: langsmith
-      import_path: src.evaluation.evaluators.workflow_evaluator.WorkflowEvaluator
-      thresholds:
-        execution_time_seconds: 10
-        completed_nodes: 7
-        failed_nodes: 0
-
-    llm:
-      enabled: false
-      provider: langsmith
-      import_path: src.evaluation.evaluators.llm_evaluator.LLMEvaluator
-      thresholds:
-        max_calls: 10
-        max_total_tokens: 15000
-        max_prompt_tokens: 8000
-        max_completion_tokens: 7000
-        max_cost_usd: 0.20
-        max_latency_seconds: 60
-
-    tools:
-      enabled: false
-      provider: custom
-      import_path: src.evaluation.evaluators.tool_evaluator.ToolEvaluator
-      thresholds:
-        max_tool_latency_seconds: 5
-        max_failed_tools: 0
-        min_success_rate: 0.95
-
-    report_quality:
-      enabled: true
-      provider: langsmith
-      import_path: src.evaluation.evaluators.report_quality_evaluator.ReportQualityEvaluator
-      criteria:
-        - completeness
-        - structure
-        - evidence
-        - recommendations
-        - readability

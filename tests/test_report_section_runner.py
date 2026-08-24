@@ -99,34 +99,6 @@ class TestReportSectionRunner:
         assert result["status"] == "failed"
         assert "No prompt" in result["error"]
 
-    @patch("src.workflow.report.report_section_runner.ReportCompiler")
-    @patch("src.workflow.report.report_section_runner.config_loader")
-    def test_run_final_compilation(self, mock_config, mock_compiler):
-        """Test running final compilation section."""
-        mock_config.get.return_value = {"final_compilation": {"enabled": True}}
-        mock_compiler_instance = MagicMock()
-        mock_compiler_instance.compile.return_value = "Final report content"
-        mock_compiler.return_value = mock_compiler_instance
-
-        runner = ReportSectionRunner()
-        state: WorkflowState = {
-            "restaurant_concept": "Test",
-            "investment": "₹500,000",
-            "target_demographic": "Professionals",
-            "special_note": "",
-            "society": "",
-            "local_area": "Test Area",
-            "city": "Test City",
-            "state": "Test State",
-            "country": "Test Country",
-            "pincode": "",
-            "research_results": {},
-            "section_reports": {},
-            "errors": [],
-        }
-        result = runner.run("final_compilation", state)
-        assert result["status"] == "success"
-        assert result["report"] == "Final report content"
 
     @patch("src.workflow.report.report_section_runner.prompts_loader")
     @patch("src.workflow.report.report_section_runner.config_loader")
@@ -165,8 +137,15 @@ class TestReportSectionRunner:
             "section_reports": {},
             "errors": [],
         }
-        result = runner._build_prompt("market_analysis_prompt", state)
-        assert isinstance(result, str)
+        prompt, sources = runner._build_prompt(
+            {
+                "prompt": "market_analysis_prompt",
+                "research_section": "market_analysis",
+            },
+            state,
+        )
+        assert isinstance(prompt, str)
+        assert isinstance(sources, list)
 
     @patch("src.workflow.report.report_section_runner.prompts_loader")
     @patch("src.workflow.report.report_section_runner.config_loader")
@@ -180,7 +159,9 @@ class TestReportSectionRunner:
                 "max_text_per_result": 300,
                 "max_evidence_chars_for_final_report": 6000,
             },
-            "research.sections": {"market_analysis": {}, "competitive_analysis": {}},
+            "report.sections": {
+                "market_analysis": {"research_section": "market_analysis"},
+            },
         }.get(key, default)
 
         runner = ReportSectionRunner()
@@ -195,15 +176,22 @@ class TestReportSectionRunner:
             "state": "Test State",
             "country": "Test Country",
             "pincode": "",
-            "research_results": {
-                "market_analysis": {"evidence": [{"content": "Market evidence"}]},
-                "competitive_analysis": {"evidence": [{"content": "Competitive evidence"}]},
+            "research_results": {},
+            "section_reports": {
+                "market_analysis": {
+                    "status": "success",
+                    "content": "Draft market content.",
+                    "sources": [{"source": "Test Source", "title": "Test Title"}],
+                }
             },
-            "section_reports": {},
             "errors": [],
         }
-        result = runner._build_prompt("risk_assessment_prompt", state)
-        assert isinstance(result, str)
+        prompt, sources = runner._build_prompt(
+            {"prompt": "risk_assessment_prompt", "research_section": None},
+            state,
+        )
+        assert isinstance(prompt, str)
+        assert isinstance(sources, list)
 
     def test_format_evidence_empty(self):
         """Test formatting empty evidence."""

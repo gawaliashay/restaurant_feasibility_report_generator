@@ -11,7 +11,6 @@ from typing import Any
 from langchain_tavily import TavilySearch
 
 from src.configuration.config_loader import config_loader
-from ..query_normalizer import normalize_query
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +24,7 @@ def _get_client() -> TavilySearch | None:
             logger.error("Tavily API key is not configured")
             return None
         
-        max_results = config_loader.get("tools.tavily_search.max_results", 5)
+        max_results = config_loader.get("apis.tavily.max_results", 5)
         return TavilySearch(max_results=max_results, tavily_api_key=api_key)
     
     except Exception as e:
@@ -33,46 +32,18 @@ def _get_client() -> TavilySearch | None:
         return None
 
 
-def tavily_search(search_query: str | list[str]) -> dict[str, Any]:
-    """Search the web using Tavily."""
-    # Validate query
-    q, error = normalize_query(search_query)
-    if error:
-        return {
-            "tool": "tavily",
-            "status": "failed",
-            "data": [],
-            "error": error,
-        }
-    
-    # Get client
+def tavily_search(query: str) -> dict[str, Any]:
+    if not query or not query.strip():
+        return {"tool": "tavily_search", "status": "failed", "data": [], "error": "Query cannot be empty"}
+
     client = _get_client()
     if client is None:
-        return {
-            "tool": "tavily",
-            "status": "failed",
-            "data": [],
-            "error": "Tavily client unavailable",
-        }
-    
-    # Execute search
+        return {"tool": "tavily_search", "status": "failed", "data": [], "error": "Tavily client unavailable"}
+
     try:
-        response = client.invoke({"query": q})
+        response = client.invoke({"query": query.strip()})
         results = response.get("results", [])
-        logger.info(f"Tavily returned {len(results)} results")
-        
-        return {
-            "tool": "tavily",
-            "status": "success",
-            "data": results,
-            "error": None,
-        }
-    
+        return {"tool": "tavily_search", "status": "success", "data": results, "error": None}
     except Exception as e:
-        logger.exception(f"Tavily search failed: {e}")
-        return {
-            "tool": "tavily",
-            "status": "failed",
-            "data": [],
-            "error": str(e),
-        }
+        logger.exception("Tavily search failed: %s", e)
+        return {"tool": "tavily_search", "status": "failed", "data": [], "error": str(e)}
