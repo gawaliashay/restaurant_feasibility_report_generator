@@ -1,210 +1,161 @@
 # Restaurant Market Feasibility Pipeline
 
-An evidence-first LangGraph system that produces a restaurant feasibility report (Markdown and JSON) for a given concept, location, and investment.
+An evidence-first LangGraph system that produces a **restaurant feasibility report** (Markdown and JSON) for a given concept, location, and investment.
 
-Research gathers facts from external tools with **no LLM**. An LLM then writes each report section from that evidence. A compiler assembles the document **without a further model call**.
+Someone considering a site needs more than a chat essay. This project **collects local evidence with tools first**, then asks a language model to write each section from that packet, then **assembles the document without a further model call**.
+
+Diagrams of the graphs, `run_tool`, and RAG ingest/retrieve: **[ARCHITECTURE.md](ARCHITECTURE.md)**.
 
 ---
 
 ## Problem
 
-Opening a restaurant is a capital decision. A founder needs a local picture: whether demand exists for this cuisine, who already operates nearby, how the site is reached, who lives in the catchment, which licenses apply, and what can go wrong — tied to a specific neighbourhood and budget.
+Opening a restaurant commits capital. A useful brief answers, for **this cuisine in this neighbourhood**:
 
-A single chat-model answer cannot supply that. It has no Maps pins, no Trends series, and no copy of the FSSAI or Shops Act. It also tends to blend national anecdotes with local advice. Generic web search without structure dumps links instead of a sectioned brief a lender or partner can read.
+- Is there demand, and how stable does interest look?
+- Who already competes, at what prices and ratings?
+- Can customers reach the site (roads, transit, anchors, congestion)?
+- Who lives nearby, and what does that imply for hours and menu?
+- Which licenses and operating rules apply?
+- What are the main risks, and is the recommendation GO, CONDITIONAL GO, or NO GO?
 
-The job is therefore: **collect locality-specific evidence first, then write a structured feasibility report from that evidence only.**
+A single LLM call cannot see Google Maps, Trends, or the FSSAI / Shops Act text. A pile of search links is not a lender-ready document. The gap is **local, sourced, sectioned analysis** — not another generic “food industry is growing” paragraph.
 
 ---
 
 ## Solution
 
-This project is a two-phase pipeline.
+The pipeline is three stages.
 
-**Collect.** Independent research sections run in parallel. Tavily, Google Maps, Google Trends, and a compliance RAG tool return facts. Results are normalized into `EvidenceItem` records (source, title, content, Maps extras such as rating and review count). Failed tools are recorded; remaining evidence still proceeds.
+**1. Research (no chat LLM).**  
+Five sections run in parallel: market, competitive, location, demographics, compliance. Each section’s tools and queries live in `configs.yaml`. Tavily, Google Maps, Google Trends, and a RAG retrieve call return raw results. Those results are normalized into `EvidenceItem` records (source, title, content, Maps rating/reviews when present), deduplicated, and capped so the next stage has a bounded packet.
 
-**Write, then assemble.** A second graph asks the LLM to draft one section at a time from those Insights. Risk and strategy run after the evidence sections, using the drafts rather than raw APIs. A compiler with no LLM concatenates YAML-ordered sections, builds an executive summary, and copies the GO / CONDITIONAL GO / NO GO verdict and next steps from strategy.
+**2. Report (chat LLM per section).**  
+A second LangGraph DAG writes Markdown from Insights only. Market through compliance can run together. **Risk** waits until those drafts exist. **Strategy** waits on risk. Risk and strategy do not re-query Maps; they read the section reports.
 
-RAG holds a **compliance corpus** (local PDF, fetched website, remote PDF) so licenses and hours come from ingested law and guidance. Live market and competitor data stay on search and Maps so the vector store is not used as a general web index.
+**3. Compile (no LLM).**  
+The compiler stacks successful sections in YAML order, adds an executive summary from first paragraphs, and copies the strategy verdict and first actions into the conclusion. Export is `reports/report_*.md` and `.json`.
 
-The operator changes concept and location in `configs.yaml` and reruns. Output is Markdown plus JSON under `reports/`.
+RAG is **one tool**, not the whole product. A compliance corpus (local PDF, fetched website, remote PDF) is ingested into Qdrant. Licenses and hours come from that store. Live market and competitor facts stay on Tavily and Maps.
+
+The operator sets `business_case.default` (concept, area, city, investment) and reruns. The same graphs produced both a Baner momo brief and a Kothrud Italian brief by changing config, not code.
 
 ---
 
 ## How it works
 
 ```
-Input (concept, location, investment)
-        │
-        ▼
-   Research graph          parallel sections · tools only · no LLM
-   Tavily · Maps · Trends · RAG
-        │
-        ▼
-   Report graph            LLM per section · DAG (risk and strategy last)
-        │
-        ▼
-   Compiler                no LLM · Markdown + JSON
+Concept + location + investment
+              │
+              ▼
+     Research graph          parallel · tools only · no chat LLM
+     Tavily · Maps · Trends · RAG
+              │
+              ▼
+     Report graph            LLM per section · DAG
+     evidence sections → risk → strategy
+              │
+              ▼
+     Compiler                no LLM · Markdown + JSON
 ```
 
-| Stage | Model | What happens |
-|--------|--------|----------------|
-| Research | None | YAML-defined sections run in parallel. Tools return raw results. Evidence is normalized, deduplicated, and capped. |
-| Report | Chat LLM (default: OpenAI `gpt-4o-mini`) | Each section is prompted from Insights. Risk and strategy read the other section drafts. |
-| Compile | None | Sections are stacked in YAML order. The executive summary and conclusion are derived from those drafts. |
+| Stage | Chat LLM | Responsibility |
+|--------|----------|----------------|
+| Research | No | Fan-out per YAML section; validate and cap evidence |
+| Report | Yes (default OpenAI `gpt-4o-mini`) | One prompt per section; risk/strategy use other drafts |
+| Compile | No | Headings, executive summary, GO/NO GO + next steps |
 
-LangGraph state is a `TypedDict` with reducers. Pydantic models (`EvidenceItem`, `ResearchSectionResult`, `ReportSectionResult`) validate data at node boundaries.
+LangGraph state is a `TypedDict` with reducers so parallel nodes merge. Pydantic (`EvidenceItem`, `ResearchSectionResult`, `ReportSectionResult`) validates payloads at node boundaries.
+
+YAML **names** tools; `src/common/tools/tool_registry.py` **maps** names to functions. Adding a source is a config line plus a registry entry, not a graph rewrite.
 
 ---
 
-## Report contents
+## What the report includes
 
-Configured in `src/configuration/configs.yaml` under `report.sections`:
+Configured under `report.sections` in `src/configuration/configs.yaml`.
 
-| Section | Evidence |
-|---------|----------|
-| Market analysis | Trends + web search |
-| Competitive analysis | Google Maps + web search |
-| Location analysis | Maps + web search |
-| Customer demographics | Web search |
-| Compliance | RAG (ingested legal corpus) |
-| Risk assessment | Prior section reports |
-| Strategic recommendations | Prior sections, including risk |
+| Section | Question it answers | Evidence |
+|---------|---------------------|----------|
+| Market analysis | Is there demand for this format? | Trends + web search |
+| Competitive analysis | Who operates nearby, and at what price? | Maps + web search |
+| Location analysis | Is the locality workable as a site? | Maps + web search |
+| Customer demographics | Who lives here? | Web search |
+| Compliance | What must the owner obtain and obey? | RAG corpus |
+| Risk assessment | What can go wrong, with evidence? | The five drafts above |
+| Strategic recommendations | Positioning, action plan, GO / CONDITIONAL GO / NO GO | Drafts including risk |
 
-Set concept and location in `business_case.default`. Query templates interpolate `{restaurant_concept}`, `{local_area}`, `{city}`, and related fields.
-
-Competitor tables use Google Maps ratings and review counts (rows with 20 or more Maps reviews). Citations appear inline on each section.
+Competitor tables use **Google Maps** ratings and review counts (rows with **20 or more** Maps reviews). Citations are inline (`*Sources: …*`). Prompts instruct the model to stay on Insights (no invented market sizes or placeholder `N/A` cells).
 
 ---
 
 ## Tools
 
-YAML names the tools; `src/common/tools/tool_registry.py` binds names to functions.
-
-| Name | Provider | Used for |
-|------|----------|----------|
+| Name | Provider | Role |
+|------|----------|------|
 | `tavily_search` | Tavily | Market, location, and demographic web results |
-| `google_maps` | SerpAPI (Google Local) | Competitors and nearby anchors |
+| `google_maps` | SerpAPI (`google_local`) | Competitors and nearby anchors |
 | `google_trends` | SerpAPI | Interest over time |
-| `rag` | Qdrant | Licenses, operating rules, penalties |
+| `rag` | Qdrant retrieve | Licenses, hours, penalties |
 
-### Compliance corpus
-
-`src/rag/ingest_all.py` loads `rag_sources` from config:
-
-- Local PDFs (for example a restaurant legal handbook)
-- Web pages (for example Maharashtra Shops and Establishments)
-- Remote PDFs (for example the FSSAI Act)
-
-Documents are parsed, chunked, embedded, and stored in Qdrant (`restaurant_compliance-rag`). At query time the RAG tool **retrieves** only (`top_k`, score threshold, per-chunk length).
+Compliance ingest (`python -m src.rag.ingest_all`) loads `rag_sources`: local PDFs, websites, and PDFs fetched by URL. At runtime the RAG tool **retrieves** only (`top_k`, score threshold, chunk length). Execution path: [ARCHITECTURE.md](ARCHITECTURE.md#tool-pipeline) and [RAG pipeline](ARCHITECTURE.md#rag-pipeline).
 
 ---
 
 ## Quick start
 
-**Python 3.13+.** Keys: OpenAI (or another LLM in `defaults.analysis_llm`), Tavily, SerpAPI, Qdrant. LangSmith and Groq are optional.
+Python **3.13+**. API keys: OpenAI (or switch `defaults.analysis_llm`), Tavily, SerpAPI, Qdrant. LangSmith is optional.
 
 ```bash
 python -m venv .venv
-# Windows:  .venv\Scripts\activate
+# Windows: .venv\Scripts\activate
 # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env
 ```
 
-Copy `.env.example` to `.env`:
-
-```env
-OPENAI_API_KEY=
-TAVILY_API_KEY=
-SERPAPI_API_KEY=
-SERPAPI_ENDPOINT=https://serpapi.com/search
-SERPAPI_TIMEOUT=30
-QDRANT_URL=
-QDRANT_API_KEY=
-```
-
-Keep `.env` out of version control.
-
-**1. Ingest the compliance corpus** (once per environment):
+Set in `.env`: `OPENAI_API_KEY`, `TAVILY_API_KEY`, `SERPAPI_API_KEY`, `SERPAPI_ENDPOINT`, `SERPAPI_TIMEOUT`, `QDRANT_URL`, `QDRANT_API_KEY`. Do not commit `.env`.
 
 ```bash
 python -m src.rag.ingest_all
-```
-
-**2. Run the pipeline** from the project root:
-
-```bash
 python -m src.pipeline_runners.pipeline
+pytest tests/ -q
 ```
 
 | Flag | Effect |
 |------|--------|
 | *(none)* | Research, report, compile, export |
 | `--research-file PATH` | Reuse saved research JSON, then report |
-| `--latest-research` | Reuse the newest file under `reports/processed_evidence/` |
+| `--latest-research` | Newest file under `reports/processed_evidence/` |
 
-Outputs: `reports/report_YYYYMMDD_HHMMSS.md` and `.json`.
+Outputs: `reports/report_YYYYMMDD_HHMMSS.md` and `.json`. Throughput: `resource_limits.mode` (`fast` / `balanced` / `quality`).
 
-Throughput is controlled by `resource_limits.mode` (`fast`, `balanced`, `quality`).
-
-**Tests**
-
-```bash
-pytest tests/ -q
-```
-
-**HTTP API** (same workflows as the CLI):
-
-```bash
-python -m app.run_api
-```
-
-OpenAPI: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
+HTTP API (same workflows): `python -m app.run_api` — [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
 
 ---
 
-## Project structure
+## Layout
 
 ```
-app/                          FastAPI entry
-src/
-  configuration/              configs.yaml, prompts.yaml, loaders
-  common/
-    schemas.py                Pydantic contracts
-    tools/                    registry, clients, evidence processor
-    model_loader.py
-  workflow/
-    research/                 parallel evidence graph
-    report/                   DAG, compiler, exporter
-  rag/                        ingest, parse, retrieve
-  graph_states/               WorkflowState
-  pipeline_runners/           CLI
+app/                      FastAPI (same pipeline as the CLI)
+src/configuration/        business case, tools, queries, prompts
+src/common/               Pydantic schemas, tool registry, clients
+src/workflow/research/    parallel evidence graph
+src/workflow/report/      report DAG, compiler, exporter
+src/rag/                  ingest, parse, retrieve
+src/pipeline_runners/     python -m src.pipeline_runners.pipeline
 tests/
-reports/                      generated reports
+reports/
+ARCHITECTURE.md           graphs and pipelines
 ```
-
-Prompt keys in `prompts.yaml` match `report.sections.*.prompt` in `configs.yaml`.
-
----
-
-## Configuration
 
 | File | Role |
 |------|------|
-| `src/configuration/configs.yaml` | Business case, tools and queries, models, RAG sources, limits |
-| `src/configuration/prompts.yaml` | Section-writing instructions |
-| `.env` | API keys and SerpAPI endpoint |
+| `src/configuration/configs.yaml` | Concept, location, tools, models, RAG sources, limits |
+| `src/configuration/prompts.yaml` | How each report section is written |
+| `.env` | Secrets |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | LangGraph, tool pipeline, RAG pipeline, state reducers |
 
 ---
 
-## Engineering
-
-- **Separation of concerns.** Research never calls a chat model. The compiler never calls a chat model. The LLM writes sections only.
-- **Config-driven tools.** Adding a tool is a YAML name plus a registry function, not a graph rewrite.
-- **RAG as a tool.** The vector store holds the compliance corpus. Live market and Maps data stay on search APIs.
-- **Contracts.** Evidence and section results are validated with Pydantic before they enter LangGraph state.
-- **Bounded context.** Evidence is mixed across tools, capped by character limits, and filtered for empty queries and unknown tool names. Failed tool calls are recorded; remaining evidence still reaches the section.
-- **Resilient reporting.** LLM calls use retry with backoff. The compiler includes only successful sections and builds the conclusion from the strategy verdict and action plan.
-
----
-
-Third-party APIs, maps data, and source documents remain subject to their own terms of use.
+Third-party APIs and source documents remain subject to their own terms.
