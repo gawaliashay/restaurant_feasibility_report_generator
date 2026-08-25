@@ -137,24 +137,71 @@ HTTP API (same workflows): `python -m app.run_api` — [http://127.0.0.1:8000/do
 ## Layout
 
 ```
-app/                      FastAPI (same pipeline as the CLI)
-src/configuration/        business case, tools, queries, prompts
-src/common/               Pydantic schemas, tool registry, clients
-src/workflow/research/    parallel evidence graph
-src/workflow/report/      report DAG, compiler, exporter
-src/rag/                  ingest, parse, retrieve
-src/pipeline_runners/     python -m src.pipeline_runners.pipeline
-tests/
-reports/
-ARCHITECTURE.md           graphs and pipelines
+.
+├── README.md                          # what this project is and how to run it
+├── ARCHITECTURE.md                    # graphs, tool pipeline, RAG wiring
+├── requirements.txt                   # Python packages
+├── pyproject.toml                     # project metadata / uv
+├── .env.example                       # copy to .env and fill API keys
+├── app/                               # HTTP API (same pipeline as CLI)
+│   ├── main.py                        # FastAPI routes
+│   ├── run_api.py                     # start the API server
+│   └── api_tester.py                  # manual API checks
+├── src/                               # pipeline code
+│   ├── configuration/                 # YAML the operator edits
+│   │   ├── configs.yaml               # concept, location, tools, models, limits
+│   │   ├── prompts.yaml               # how each report section is written
+│   │   ├── config_loader.py           # loads configs.yaml
+│   │   └── prompts_loader.py          # loads prompts.yaml
+│   ├── graph_states/                  # TypedDict shared across graphs
+│   │   └── workflow_states.py         # shared LangGraph state
+│   ├── pipeline_runners/              # CLI entry points
+│   │   ├── pipeline.py                # research → report → compile → save
+│   │   ├── research_pipeline_runner.py  # research only
+│   │   ├── report_pipeline_runner.py    # report from saved research
+│   │   └── tool_pipeline_runner.py      # call one tool (debug)
+│   ├── workflow/
+│   │   ├── research/                  # tools only; no chat LLM
+│   │   │   ├── research_workflow.py   # parallel graph, one node per section
+│   │   │   └── research_section_runner.py  # run tools → evidence
+│   │   └── report/                    # chat LLM, then assemble
+│   │       ├── report_workflow.py     # DAG: sections → risk → strategy
+│   │       ├── report_section_runner.py  # prompt + LLM → Markdown
+│   │       ├── report_compiler.py     # stack sections (no LLM)
+│   │       └── report_exporter.py     # write reports/*.md and *.json
+│   ├── common/                        # shared types, LLM, tools
+│   │   ├── schemas.py                 # Pydantic evidence and section types
+│   │   ├── model_loader.py            # chat LLM for the report stage
+│   │   └── tools/                     # registry, run_tool, clients
+│   │       ├── tool_registry.py       # YAML name → function
+│   │       ├── tool_pipeline.py       # run_tool: validate, call, return
+│   │       ├── evidence_processor.py  # raw API output → EvidenceItem
+│   │       └── clients/               # Tavily, SerpAPI, RAG
+│   │           ├── tavily_client.py   # web search
+│   │           ├── serpapi_client.py  # Google Maps and Trends
+│   │           └── rag_client.py      # RAG retrieve
+│   ├── rag/                           # compliance corpus in Qdrant
+│   │   ├── ingest_all.py              # load local/remote PDFs and websites
+│   │   ├── rag_pipeline.py            # retrieve-only; no chat LLM
+│   │   ├── model_schema.py            # chunk and retrieve types
+│   │   ├── parser/
+│   │   │   └── parser.py              # read PDFs and web pages
+│   │   ├── ingestion/
+│   │   │   └── ingestion_pipeline.py  # parse → split → embed → store
+│   │   ├── vector_store/
+│   │   │   └── vector_store.py        # Qdrant write and search
+│   │   └── retriever/
+│   │       └── retriever.py           # search and truncate chunks
+│   ├── logging_exception/
+│   │   ├── logging/
+│   │   │   └── logger.py              # logging
+│   │   └── exception/
+│   │       └── custom_exception.py    # app exceptions
+│   └── utils/
+│       └── create_unique_uuid.py      # IDs for jobs / records
+├── tests/                             # unit tests
+└── reports/                           # generated Markdown and JSON
 ```
-
-| File | Role |
-|------|------|
-| `src/configuration/configs.yaml` | Concept, location, tools, models, RAG sources, limits |
-| `src/configuration/prompts.yaml` | How each report section is written |
-| `.env` | Secrets |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | LangGraph, tool pipeline, RAG pipeline, state reducers |
 
 ---
 
