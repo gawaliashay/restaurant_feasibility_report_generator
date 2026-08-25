@@ -1,48 +1,64 @@
-# Restaurant Market Feasibility Pipeline
+# Restaurant Feasibility Report
 
-An evidence-first LangGraph system that produces a **restaurant feasibility report** (Markdown and JSON) for a given concept, location, and investment.
+A founder putting money into a site needs a **local** answer: this cuisine, this neighbourhood, this budget — not a national “F&B is growing” essay.
 
-Someone considering a site needs more than a chat essay. This project **collects local evidence with tools first**, then asks a language model to write each section from that packet, then **assembles the document without a further model call**.
-
-Diagrams of the graphs, `run_tool`, and RAG ingest/retrieve: **[ARCHITECTURE.md](ARCHITECTURE.md)**.
+This project writes one **report** (Markdown and JSON) for that decision: demand, competitors, access, who lives nearby, licenses, risks, and a **GO / CONDITIONAL GO / NO GO** with next steps.
 
 ---
 
-## Problem
+## The real problem
 
-Opening a restaurant commits capital. A useful brief answers, for **this cuisine in this neighbourhood**:
+Opening a restaurant is a capital decision made **before** the first cover. The expensive mistakes are usually not recipes. They are:
 
-- Is there demand, and how stable does interest look?
-- Who already competes, at what prices and ratings?
-- Can customers reach the site (roads, transit, anchors, congestion)?
-- Who lives nearby, and what does that imply for hours and menu?
-- Which licenses and operating rules apply?
-- What are the main risks, and is the recommendation GO, CONDITIONAL GO, or NO GO?
+- Choosing a **format the neighbourhood will not support** (wrong prices, wrong hours, wrong cuisine for who actually lives and works there).
+- Underestimating **who already owns the street** — nearby kitchens, prices, and whether they are established enough to matter.
+- Signing a lease on a **site customers cannot reach easily** (access, landmarks, traffic) and discovering **licenses and operating rules** only after rent starts.
+- Paying for a consultant deck that takes weeks, or asking a chatbot that has **no Maps listings, no Trends data, and no FSSAI / Shops Act text**.
 
-A single LLM call cannot see Google Maps, Trends, or the FSSAI / Shops Act text. A pile of search links is not a lender-ready document. The gap is **local, sourced, sectioned analysis** — not another generic “food industry is growing” paragraph.
+City blogs and “food industry TAM” slides do not tell an owner whether **this** corner can carry **this** concept. What they need is a **report they can read and act on**.
 
 ---
 
-## Solution
+## The solution
 
-The pipeline is three stages.
+The output is a **single feasibility report** (`reports/report_*.md`), not a chat window.
 
-**1. Research (no chat LLM).**  
-Five sections run in parallel: market, competitive, location, demographics, compliance. Each section’s tools and queries live in `configs.yaml`. Tavily, Google Maps, Google Trends, and a RAG retrieve call return raw results. Those results are normalized into `EvidenceItem` records (source, title, content, Maps rating/reviews when present), deduplicated, and capped so the next stage has a bounded packet.
+You set concept, neighbourhood, city, and investment. The document answers, in order:
 
-**2. Report (chat LLM per section).**  
-A second LangGraph DAG writes Markdown from Insights only. Market through compliance can run together. **Risk** waits until those drafts exist. **Strategy** waits on risk. Risk and strategy do not re-query Maps; they read the section reports.
+1. Is there demand for this format here, and is interest stable?
+2. Who competes nearby, at what prices and ratings?
+3. Is the locality workable as a site (reach, anchors, friction)?
+4. Who lives and works nearby, and what does that imply for menu and hours?
+5. What must the owner obtain and obey (licenses, hours, penalties)?
+6. What can go wrong, with evidence?
+7. Positioning, first actions, and a **GO / CONDITIONAL GO / NO GO**.
 
-**3. Compile (no LLM).**  
-The compiler stacks successful sections in YAML order, adds an executive summary from first paragraphs, and copies the strategy verdict and first actions into the conclusion. Export is `reports/report_*.md` and `.json`.
+**What real data the owner gets, and why it helps**
 
-RAG is **one tool**, not the whole product. A compliance corpus (local PDF, fetched website, remote PDF) is ingested into Qdrant. Licenses and hours come from that store. Live market and competitor facts stay on Tavily and Maps.
+| In the report | Real data | Why it helps the owner |
+|---------------|-----------|------------------------|
+| Market | Search + Google Trends for this cuisine / this city | See if interest is real and steady, not a national “F&B is growing” claim |
+| Competitors | Google Maps: nearby kitchens, ratings, review counts, prices | See who already owns the street before you copy a menu or a ticket |
+| Location | Maps + local search: access, landmarks, traffic | Check whether customers can actually reach the site |
+| Demographics | Local population and spend signals from web sources | Match hours and menu to who lives and works nearby |
+| Compliance | Official FSSAI / shops text from the RAG store | Know licenses, hours, and penalties before rent starts |
+| Risk + strategy | Built from the sections above | Plain list of what can fail, then GO / CONDITIONAL GO / NO GO |
 
-The operator sets `business_case.default` (concept, area, city, investment) and reruns. The same graphs produced both a Baner momo brief and a Kothrud Italian brief by changing config, not code.
+Change concept or location and run again. Same report shape — for example a Baner momo report and a Kothrud Italian report — without rewriting the product.
+
+How the graphs, tools, and RAG are wired: **[ARCHITECTURE.md](ARCHITECTURE.md)**.
 
 ---
 
-## How it works
+## How it is built
+
+Evidence first, then writing, then a document. RAG is **one tool** (compliance retrieve), not the whole product.
+
+**1. Research (no chat LLM).** Five sections in parallel: market, competitive, location, demographics, compliance. Tools and queries live in `configs.yaml`. Tavily, Google Maps, Google Trends, and RAG return raw results, then `EvidenceItem` records (source, title, content, Maps rating/reviews), deduped and capped.
+
+**2. Report (chat LLM per section).** A LangGraph DAG writes Markdown from Insights only. Market through compliance can run together. **Risk** waits on those drafts. **Strategy** waits on risk. Risk and strategy do not re-query Maps.
+
+**3. Compile (no LLM).** Stack successful sections in YAML order, executive summary from first paragraphs, conclusion from the strategy verdict and first actions. Export: `reports/report_*.md` and `.json`.
 
 ```
 Concept + location + investment
