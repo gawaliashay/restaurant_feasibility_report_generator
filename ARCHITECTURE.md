@@ -8,12 +8,24 @@ Product context, setup, and how to run: **[README.md](README.md)**.
 
 ## Pipeline
 
-`src/pipeline_runners/pipeline.py` loads `business_case.default` into `WorkflowState`, then:
+**Product entry:** `python -m src.pipeline_runners.pipeline`  
+(`src/pipeline_runners/pipeline.py`)
+
+Loads `business_case.default` into `WorkflowState`, then:
 
 1. `ResearchWorkflow.run(state)` — `StateGraph` fan-out  
 2. `ReportWorkflow.run(state)` — `StateGraph` DAG  
 3. `ReportCompiler.compile(state)` — Python, not a graph  
 4. `export_report(...)` → `reports/report_*.md` and `.json`
+
+This command does **not** write research JSON. Stage checkers (same graphs, stop after one stage):
+
+| Module | Role |
+|--------|------|
+| `research_pipeline_runner.py` | Research only; save evidence JSON (`reports/processed_evidence/research_results_*.json`) |
+| `report_pipeline_runner.py` | Report + compile from saved research JSON (newest file). No Maps / Tavily |
+
+Tools are not a separate runner. Research nodes call `run_tool` (tool pipeline below). RAG ingest: `python -m src.rag.ingest_all` (offline). Retrieve is the `rag` tool inside research, not a separate graph.
 
 Shared state: `src/graph_states/workflow_states.py`.  
 Research merges `research_results` with `operator.or_` and `errors` with `operator.add`.  

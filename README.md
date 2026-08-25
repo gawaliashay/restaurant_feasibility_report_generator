@@ -138,13 +138,17 @@ python -m src.pipeline_runners.pipeline
 pytest tests/ -q
 ```
 
-| Flag | Effect |
-|------|--------|
-| *(none)* | Research, report, compile, export |
-| `--research-file PATH` | Reuse saved research JSON, then report |
-| `--latest-research` | Newest file under `reports/processed_evidence/` |
+No CLI flags on the product run. `pipeline` is research → report → compile → save.
 
-Outputs: `reports/report_YYYYMMDD_HHMMSS.md` and `.json`. Throughput: `resource_limits.mode` (`fast` / `balanced` / `quality`).
+| Command | What it does |
+|---------|----------------|
+| `python -m src.pipeline_runners.pipeline` | Full run. Writes `reports/report_*.md` and `.json` (does not save research JSON) |
+| `python -m src.pipeline_runners.research_pipeline_runner` | Research graph only. Writes `reports/processed_evidence/research_results_*.json` |
+| `python -m src.pipeline_runners.report_pipeline_runner` | Report + compile from the **newest** saved research JSON. Writes `reports/report_*.md` and `.json` |
+
+RAG ingest is not a pipeline stage: `python -m src.rag.ingest_all` fills Qdrant. Retrieve runs inside research (compliance).
+
+Throughput: `resource_limits.mode` (`fast` / `balanced` / `quality`).
 
 HTTP API (same workflows): `python -m app.run_api` — [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
 
@@ -171,11 +175,10 @@ HTTP API (same workflows): `python -m app.run_api` — [http://127.0.0.1:8000/do
 │   │   └── prompts_loader.py          # loads prompts.yaml
 │   ├── graph_states/                  # TypedDict shared across graphs
 │   │   └── workflow_states.py         # shared LangGraph state
-│   ├── pipeline_runners/              # CLI entry points
-│   │   ├── pipeline.py                # research → report → compile → save
-│   │   ├── research_pipeline_runner.py  # research only
-│   │   ├── report_pipeline_runner.py    # report from saved research
-│   │   └── tool_pipeline_runner.py      # call one tool (debug)
+│   ├── pipeline_runners/              # how you start a run
+│   │   ├── pipeline.py                # full run: research → report → compile → save report files
+│   │   ├── research_pipeline_runner.py  # research only; save evidence JSON
+│   │   └── report_pipeline_runner.py    # report + compile from saved research JSON
 │   ├── workflow/
 │   │   ├── research/                  # tools only; no chat LLM
 │   │   │   ├── research_workflow.py   # parallel graph, one node per section
@@ -216,7 +219,7 @@ HTTP API (same workflows): `python -m app.run_api` — [http://127.0.0.1:8000/do
 │   └── utils/
 │       └── create_unique_uuid.py      # IDs for jobs / records
 ├── tests/                             # unit tests
-└── reports/                           # generated Markdown and JSON
+└── reports/                           # report_*.md/.json and processed_evidence/
 ```
 
 ---
