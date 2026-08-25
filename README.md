@@ -176,7 +176,7 @@ HTTP API (same workflows): `python -m app.run_api` — [http://127.0.0.1:8000/do
 │   ├── graph_states/                  # TypedDict shared across graphs
 │   │   └── workflow_states.py         # shared LangGraph state
 │   ├── pipeline_runners/              # how you start a run
-│   │   ├── pipeline.py  # full run: research → report → compile → save report files
+│   │   ├── pipeline.py                 # full run: research → report → compile → save report files
 │   │   ├── research_pipeline_runner.py # research only; save evidence JSON
 │   │   └── report_pipeline_runner.py   # report + compile from saved research JSON
 │   ├── workflow/
