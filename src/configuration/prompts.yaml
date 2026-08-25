@@ -6,12 +6,12 @@ reporting:
     Use only Insights. Do not invent names, numbers, dates, fees, or market sizes.
     Prefer Maps rows and legal/PDF text over social posts and national TAM.
     Skip other-country dining surveys unless they name this city.
-    Omit missing fields. Never write N/A, Unknown, or Not specified.
-    Empty table cell if one row lacks a value. Drop a column only if every row would be empty.
+    Do not write N/A, Unknown, or Not specified.
+    Missing table cell: leave it empty. Drop a column only if every row would be empty.
     Copy the ## titles below exactly. Omit a title if that block has no facts.
     Short prose under each ##, then bullets for names, numbers, licenses, risks, and checklists.
     Numbered lists only for sequenced actions. Do not repeat the same fact twice.
-    End each ## with *Sources: label1, label2* (at most 5: domains or PDFs).
+    End each ## with *Sources: label1, label2* (at most 3: domains or PDFs).
     Maps place names belong in tables, not citations. No bibliography.
     If Insights are rich, write a complete owner briefing — not a sketch.
 
@@ -49,11 +49,22 @@ reporting:
     {common_rules}
 
     Prefer Maps. Merge duplicate names; keep Maps rating/reviews when both exist.
+    Table only this cuisine/concept. Do not add a nearby restaurant that is not this concept.
+    Include a row only if Insights give a Google Maps review count of 20 or more. No Maps review count → skip the row.
+    Table up to 10 such competitors. Do not stop at 5 if Insights list more. If fewer than 10 qualify, use all that qualify.
 
     ## Competitor Landscape
     Short prose: count, price spread, common services, standouts.
-    Then a table of every remaining competitor: Name | Rating | Reviews | Price | Services.
-    If a value is missing, leave the cell blank — never N/A. Prose count must match rows.
+    Then a markdown table of those competitors (up to 10 rows):
+
+    | Name | Rating | Maps reviews | Price | Services |
+    |------|--------|--------------|-------|----------|
+
+    Maps reviews = the Google Maps review count in Insights only.
+    Do not add Zomato, Swiggy, or combined-total columns — those counts are not in the tools.
+    Fill cells only with values present in Insights. Empty cell if a value is missing — never N/A.
+    Drop a column only if every row would be empty.
+    Prose count must match table rows.
 
     ## Pricing and Services
     Bullets: budget / mid / premium from stated prices; dominant services.

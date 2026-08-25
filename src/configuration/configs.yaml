@@ -12,17 +12,17 @@ apis:
 
 business_case:
   default:
-    restaurant_concept: "momo Restaurant"
+    restaurant_concept: "Italian Restaurant"
     location:
-      society: "rise avenue"
-      local_area: "Baner"
+      society: "karishma society"
+      local_area: "kothrud"
       city: "Pune"
       state: "Maharashtra"
       country: "India"
-      pincode: "411058"
+      pincode: "411038"
     investment: "₹350,000"
     target_demographic: "Professionals 25-45, health-conscious"
-    special_note: "momo demand, spending power, competition density"
+    special_note: "demand, spending power, competition density"
 
 research:
   sections:
