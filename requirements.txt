@@ -4,7 +4,6 @@ langchain-core>=0.2.0
 langchain-community>=0.2.0
 langchain-text-splitters>=0.2.0
 langgraph>=0.2.0
-langgraph-checkpoint-sqlite>=3.1.1
 
 # LLM providers
 langchain-openai>=0.1.0
