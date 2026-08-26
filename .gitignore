@@ -112,6 +112,11 @@ research_output_*.txt
 outputs/
 
 # =====================================
+# PROCESSED EVIDENCE
+# =====================================
+processed_evidence/
+
+# =====================================
 # RAG GENERATED ARTIFACTS
 # =====================================
 data/processed/
@@ -122,6 +127,12 @@ data/raw/base_docs/
 *.pdf
 *.docx
 *.doc
+
+# =====================================
+# PRIVATE DATA
+# =====================================
+INTERVIEW_QA.md
+steps_for_improvement.md
 
 # =====================================
 # VECTOR STORES

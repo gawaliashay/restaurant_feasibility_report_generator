@@ -3,9 +3,9 @@
 Test RAG retrieval with different queries.
 """
 
-from src.rag.rag_pipeline import get_rag_pipeline
+from src.rag.retriever.retriever import get_retriever
 
-rag = get_rag_pipeline()
+retriever = get_retriever()
 
 queries = [
     "FSSAI Act penalties",
@@ -17,12 +17,12 @@ queries = [
 for q in queries:
     print(f"\n{'='*60}")
     print(f"Query: {q}")
-    print('='*60)
-    
-    results = rag.retrieve(q, top_k=5)
-    
+    print("=" * 60)
+
+    results = retriever.retrieve(q, top_k=5)
+
     print(f"Retrieved: {len(results)} chunks\n")
-    
+
     for i, chunk in enumerate(results):
         print(f"[{i+1}] Score: {chunk.score:.4f}")
         print(f"    Source: {chunk.metadata.get('document_name', 'Unknown')}")

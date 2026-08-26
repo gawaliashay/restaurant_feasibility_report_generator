@@ -2,7 +2,7 @@
 
 Internal wiring: LangGraph graphs, `run_tool`, and RAG ingest/retrieve.
 
-Product context, setup, and how to run: **[README.md](README.md)**.
+Product context, setup, and how to run: **[README.md](README.md)**.~
 
 ---
 
@@ -13,17 +13,20 @@ Product context, setup, and how to run: **[README.md](README.md)**.
 
 Loads `business_case.default` into `WorkflowState`, then:
 
-1. `ResearchWorkflow.run(state)` — `StateGraph` fan-out  
-2. `ReportWorkflow.run(state)` — `StateGraph` DAG  
-3. `ReportCompiler.compile(state)` — Python, not a graph  
-4. `export_report(...)` → `reports/report_*.md` and `.json`
+1. `ResearchWorkflow.run(state)` — `StateGraph` fan-out
+2. Save evidence → `processed_evidence/research_results_*.json`
+3. `ReportWorkflow.run(state)` — `StateGraph` DAG
+4. `ReportCompiler.compile(state)` — Python, not a graph
+5. `export_report(...)` → `reports/report_*.md` and `.json`
 
-This command does **not** write research JSON. Stage checkers (same graphs, stop after one stage):
+Stage checkers (same graphs, stop after one stage):
 
-| Module | Role |
-|--------|------|
-| `research_pipeline_runner.py` | Research only; save evidence JSON (`reports/processed_evidence/research_results_*.json`) |
-| `report_pipeline_runner.py` | Report + compile from saved research JSON (newest file). No Maps / Tavily |
+
+| Module                        | Role                                                                                                  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `research_pipeline_runner.py` | Research only; save evidence JSON (`processed_evidence/research_results_*.json`)                      |
+| `report_pipeline_runner.py`   | Report + compile from saved research JSON (newest file under `processed_evidence/`). No Maps / Tavily |
+
 
 Tools are not a separate runner. Research nodes call `run_tool` (tool pipeline below). RAG ingest: `python -m src.rag.ingest_all` (offline). Retrieve is the `rag` tool inside research, not a separate graph.
 
@@ -32,6 +35,8 @@ Research merges `research_results` with `operator.or_` and `errors` with `operat
 Report merges `section_reports` with `operator.or_`.
 
 ---
+
+
 
 ## Research graph (fan-out)
 
@@ -54,6 +59,8 @@ flowchart LR
     CR --> E
 ```
 
+
+
 Each node:
 
 1. Formats YAML query templates from state.
@@ -63,6 +70,8 @@ Each node:
 5. Returns `{ research_results: { section_name: result }, errors: [...] }`.
 
 ---
+
+
 
 ## Report graph (DAG)
 
@@ -87,17 +96,23 @@ flowchart TB
     SR --> E([END])
 ```
 
+
+
 `_build_prompt`: `research_section` set → Insights from `research_results` (`_mix_tools`). `research_section: null` → Insights from other section reports (risk and strategy).
 
 Chat LLM via `model_loader` (`defaults.analysis_llm`). Output: `ReportSectionResult`. Retry: `reporting.retry`.
 
 ---
 
+
+
 ## Compiler
 
 `src/workflow/report/report_compiler.py` and `report_exporter.py`. No LLM. Successful sections only. `##` section titles; LLM headings become `###`. Executive summary from first paragraphs. Conclusion from strategy GO / CONDITIONAL GO / NO GO and numbered actions.
 
 ---
+
+
 
 ## Tool pipeline
 
@@ -119,16 +134,22 @@ flowchart TD
     G -->|yes| H["{ tool, status, data, error }"]
 ```
 
-| YAML name | Function |
-|-----------|----------|
-| `tavily_search` | `tavily_client.tavily_search` |
-| `google_maps` | `serpapi_client.google_maps` (`query` + `location`) |
-| `google_trends` | `serpapi_client.google_trends` |
-| `rag` | `rag_client.rag_search` → RAG retrieve below |
+
+
+
+| YAML name       | Function                                            |
+| --------------- | --------------------------------------------------- |
+| `tavily_search` | `tavily_client.tavily_search`                       |
+| `google_maps`   | `serpapi_client.google_maps` (`query` + `location`) |
+| `google_trends` | `serpapi_client.google_trends`                      |
+| `rag`           | `rag_client.rag_search` → RAG retrieve below        |
+
 
 Failed calls go on section `errors`. Remaining successes still pass through `EvidenceProcessor`.
 
 ---
+
+
 
 ## RAG pipeline
 
@@ -147,31 +168,39 @@ flowchart LR
     E --> Q[(Qdrant collection)]
 ```
 
+
+
 Collection: `rag_vectorstores.qdrant.collection_name`.
 
 ### Retrieve
 
-**Files:** `rag_client.py` → `src/rag/rag_pipeline.py` → `src/rag/retriever/retriever.py`
+**Files:** `rag_client.py` → `src/rag/retriever/retriever.py` → `vector_store`
 
 ```mermaid
 flowchart TD
-    Q[query] --> R[RAGPipeline.retrieve]
+    Q[query] --> C[rag_client.rag_search]
+    C --> R[Retriever.retrieve]
     R --> V["vector_store.search(top_k, score_threshold)"]
     V --> X[truncate max_chars_per_chunk]
     X --> OUT[RetrievedChunk list]
 ```
 
-Limits: `rag_retrieval` in `configs.yaml`. Truncation is in the retriever. `RAGPipeline` is retrieve-only.
+Limits: `rag_retrieval` in `configs.yaml`. Truncation is in the retriever. No chat LLM.
 
 ---
 
+
+
 ## State contracts
 
-| Field | Reducer | Role |
-|-------|---------|------|
-| Business and location | — | Input |
-| `research_results` | `operator.or_` | Evidence per research section |
-| `section_reports` | `operator.or_` | Markdown per report section |
-| `errors` | `operator.add` | Tool failures |
+
+| Field                 | Reducer        | Role                                      |
+| --------------------- | -------------- | ----------------------------------------- |
+| Business and location | —              | Input                                     |
+| `research_results`    | `operator.or_` | Evidence per research section             |
+| `section_reports`     | `operator.or_` | Markdown per report section (incl. risk/strategy) |
+| `export_paths`        | —              | API download paths after export           |
+| `errors`              | `operator.add` | Tool failures                             |
+
 
 Pydantic: `src/common/schemas.py`. Nodes `model_validate` then `model_dump()` into the TypedDict.

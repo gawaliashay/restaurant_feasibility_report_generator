@@ -142,8 +142,8 @@ No CLI flags on the product run. `pipeline` is research → report → compile �
 
 | Command | What it does |
 |---------|----------------|
-| `python -m src.pipeline_runners.pipeline` | Full run. Writes `reports/report_*.md` and `.json` (does not save research JSON) |
-| `python -m src.pipeline_runners.research_pipeline_runner` | Research graph only. Writes `reports/processed_evidence/research_results_*.json` |
+| `python -m src.pipeline_runners.pipeline` | Full run. Writes `reports/report_*.md` and `.json`, plus `processed_evidence/research_results_*.json` |
+| `python -m src.pipeline_runners.research_pipeline_runner` | Research graph only. Writes `processed_evidence/research_results_*.json` |
 | `python -m src.pipeline_runners.report_pipeline_runner` | Report + compile from the **newest** saved research JSON. Writes `reports/report_*.md` and `.json` |
 
 RAG ingest is not a pipeline stage: `python -m src.rag.ingest_all` fills Qdrant. Retrieve runs inside research (compliance).
@@ -201,7 +201,6 @@ HTTP API (same workflows): `python -m app.run_api` — [http://127.0.0.1:8000/do
 │   │           └── rag_client.py      # RAG retrieve
 │   ├── rag/                           # compliance corpus in Qdrant
 │   │   ├── ingest_all.py              # load local/remote PDFs and websites
-│   │   ├── rag_pipeline.py            # retrieve-only; no chat LLM
 │   │   ├── model_schema.py            # chunk and retrieve types
 │   │   ├── parser/
 │   │   │   └── parser.py              # read PDFs and web pages
@@ -210,7 +209,7 @@ HTTP API (same workflows): `python -m app.run_api` — [http://127.0.0.1:8000/do
 │   │   ├── vector_store/
 │   │   │   └── vector_store.py        # Qdrant write and search
 │   │   └── retriever/
-│   │       └── retriever.py           # search and truncate chunks
+│   │       └── retriever.py           # search and truncate chunks (retrieve-only)
 │   ├── logging_exception/
 │   │   ├── logging/
 │   │   │   └── logger.py              # logging
@@ -219,7 +218,8 @@ HTTP API (same workflows): `python -m app.run_api` — [http://127.0.0.1:8000/do
 │   └── utils/
 │       └── create_unique_uuid.py      # IDs for jobs / records
 ├── tests/                             # unit tests
-└── reports/                           # report_*.md/.json and processed_evidence/
+├── processed_evidence/                # research_results_*.json (evidence packet)
+└── reports/                           # report_*.md and report_*.json
 ```
 
 ---

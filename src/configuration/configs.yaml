@@ -168,7 +168,7 @@ models:
       max_tokens: 1024
 
 resource_limits:
-  mode: quality
+  mode: fast
 
   fast:
     max_evidence_chars_per_section: 2000

@@ -3,9 +3,9 @@
 Test RAG retrieval without running the full pipeline.
 """
 
-from src.rag.rag_pipeline import get_rag_pipeline
+from src.rag.retriever.retriever import get_retriever
 
-rag = get_rag_pipeline()
+retriever = get_retriever()
 
 queries = [
     "FSSAI Act penalties",
@@ -16,13 +16,13 @@ queries = [
 for q in queries:
     print(f"\n{'='*60}")
     print(f"Query: {q}")
-    print('='*60)
-    
-    results = rag.retrieve(q, top_k=5)
-    
+    print("=" * 60)
+
+    results = retriever.retrieve(q, top_k=5)
+
     print(f"Retrieved: {len(results)} chunks")
     for r in results:
-        source = r.metadata.get('document_name', 'Unknown')
+        source = r.metadata.get("document_name", "Unknown")
         print(f"  Source: {source}")
         print(f"  Score: {r.score:.3f}")
         print(f"  Text: {r.text[:100]}...")

@@ -231,11 +231,6 @@ def execute_research(report_id: str, request: ResearchRequest):
 
         compiler = ReportCompiler()
         final_report = compiler.compile(dict(state))
-        state["section_reports"]["final_compilation"] = {
-            "section": "final_compilation",
-            "status": "success",
-            "report": final_report,
-        }
 
         research_jobs[report_id].update({
             "progress": "90%",

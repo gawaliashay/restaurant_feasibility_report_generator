@@ -23,9 +23,9 @@ def main() -> None:
     state = ResearchWorkflow().run(state)
     results = state.get("research_results", {})
 
-    os.makedirs("reports/processed_evidence", exist_ok=True)
+    os.makedirs("processed_evidence", exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    path = f"reports/processed_evidence/research_results_{stamp}.json"
+    path = f"processed_evidence/research_results_{stamp}.json"
     payload = {
         "timestamp": datetime.now().isoformat(),
         "total_sections": len(results),

@@ -56,7 +56,7 @@ class ReportCompiler:
             "",
         ]
         for name, config in config_loader.get("report.sections", {}).items():
-            if name in ("final_compilation", "strategic_recommendations"):
+            if name == "strategic_recommendations":
                 continue
             if not config.get("enabled", True):
                 continue
@@ -72,7 +72,7 @@ class ReportCompiler:
     def _body(self, reports: dict) -> str:
         parts = []
         for name, config in config_loader.get("report.sections", {}).items():
-            if name == "final_compilation" or not config.get("enabled", True):
+            if not config.get("enabled", True):
                 continue
             result = reports.get(name, {})
             if result.get("status") != "success":

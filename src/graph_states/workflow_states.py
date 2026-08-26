@@ -30,12 +30,7 @@ class WorkflowState(TypedDict, total=False):
     # Section Reports
     section_reports: Annotated[dict[str, Any], operator.or_]
 
-    # Cross-section Analysis
-    risk_assessment: dict[str, Any]
-    strategic_recommendations: dict[str, Any]
-
-    # Final Report
-    final_report: dict[str, Any]
+    # Export Paths
     export_paths: dict[str, Any]
 
     # Runtime
