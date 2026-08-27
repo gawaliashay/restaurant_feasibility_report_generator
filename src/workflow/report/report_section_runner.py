@@ -117,17 +117,30 @@ class ReportSectionRunner:
                 limits,
             )
 
-        context = {
-            "restaurant_concept": state.get("restaurant_concept", ""),
-            "investment": state.get("investment", ""),
-            "target_demographic": state.get("target_demographic", ""),
-            "local_area": state.get("local_area", ""),
-            "city": state.get("city", ""),
-            "state": state.get("state", ""),
-            "country": state.get("country", ""),
-            "section_insights": formatted_evidence,
-            "common_rules": prompts_loader.get_prompt("reporting", "common_rules", ""),
+        # Business / location keys all come from state (empty special_note → "None").
+        input_keys = (
+            "restaurant_concept",
+            "investment",
+            "target_demographic",
+            "society",
+            "local_area",
+            "city",
+            "state",
+            "country",
+            "pincode",
+            "special_note",
+        )
+        context: dict[str, Any] = {
+            key: (state.get(key) or "") for key in input_keys
         }
+        context["special_note"] = str(context["special_note"]).strip() or "None"
+
+        common_rules = prompts_loader.get_prompt("reporting", "common_rules", "")
+        if "{special_note}" in common_rules:
+            common_rules = common_rules.format(special_note=context["special_note"])
+
+        context["section_insights"] = formatted_evidence
+        context["common_rules"] = common_rules
 
         return template.format(**context), sources
 

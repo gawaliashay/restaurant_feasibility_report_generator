@@ -14,6 +14,15 @@ reporting:
     End each ## with *Sources: label1, label2* (at most 3: domains or PDFs).
     Maps place names belong in tables, not citations. No bibliography.
     If Insights are rich, write a complete owner briefing — not a sketch.
+    Owner priority: {special_note}
+    If priority is not None/empty: weave it into relevant ## only when Insights support it.
+    If Insights lack that topic: one short sentence — do not invent.
+    Silence in Insights is not proof competitors lack a feature or that the market underserves it.
+    Never write "no competitors offer X", "X is underserved", or "unique opportunity for X"
+    unless Insights or the competitor table explicitly support that claim.
+    Do not recommend or position on a priority feature (e.g. rooftop, liquor, live music)
+    when Insights lack evidence for it — admit the gap instead.
+    If priority is None or empty, ignore it.
 
   market_analysis_prompt: |
     Demand briefing for this concept. No competitor table.
@@ -21,6 +30,7 @@ reporting:
     Concept: {restaurant_concept}
     Location: {local_area}, {city}, {state}
     Owner intent (not a census fact): {target_demographic}
+    Owner priority: {special_note}
 
     Insights:
     {section_insights}
@@ -36,12 +46,14 @@ reporting:
 
     ## Implications for Opening
     Bullets: dine-in vs delivery, timing, whether demand supports opening.
+    Do not claim rising acceptance of rooftop/liquor/live music or recommend them unless Insights say so.
 
   competitive_analysis_prompt: |
     On-the-ground competitors.
 
     Concept: {restaurant_concept}
     Location: {local_area}, {city}, {state}
+    Owner priority: {special_note}
 
     Insights:
     {section_insights}
@@ -55,6 +67,7 @@ reporting:
 
     ## Competitor Landscape
     Short prose: count, price spread, common services, standouts.
+    Mention owner-priority services (e.g. bar) only if the table/Insights show them.
     Then a markdown table of those competitors (up to 10 rows):
 
     | Name | Rating | Maps reviews | Price | Services |
@@ -62,20 +75,21 @@ reporting:
 
     Maps reviews = the Google Maps review count in Insights only.
     Do not add Zomato, Swiggy, or combined-total columns — those counts are not in the tools.
-    Fill cells only with values present in Insights. Empty cell if a value is missing — never N/A.
-    Drop a column only if every row would be empty.
+    Fill cells only with values present in Insights. drop entire raw if a value is missing — never N/A.
     Prose count must match table rows.
 
     ## Pricing and Services
     Bullets: budget / mid / premium from stated prices; dominant services.
 
     ## Positioning Gaps
-    Bullets — only what the table shows.
+    Bullets — only gaps the table/Insights prove (e.g. no exclusive Italian if stated).
+    Do not infer that competitors lack rooftop, liquor, or live music from silence.
 
   location_analysis_prompt: |
     Site viability. Do not paste the competitor table.
 
     Location: {local_area}, {city}, {state}
+    Owner priority: {special_note}
 
     Insights:
     {section_insights}
@@ -91,13 +105,15 @@ reporting:
     Bullets: named places and why they matter for footfall.
 
     ## Location Assessment
-    Short prose: strengths, stated challenges, suitability.
+    Short prose: strengths, stated challenges, suitability from Insights only.
+    Do not call the site "suitable for" rooftop/liquor/live music when Insights lack those facts.
     Then bullets: 4–6 owner site-visit checks from the evidence (not city engineering).
 
   customer_demographics_prompt: |
     Who lives here. Do not treat "{target_demographic}" as measured unless Insights agree.
 
     Location: {local_area}, {city}, {state}
+    Owner priority: {special_note}
 
     Insights:
     {section_insights}
@@ -116,10 +132,13 @@ reporting:
     Bullets: menu, hours, or price only where Insights support it.
 
   compliance_requirements_prompt: |
-    What the owner must obtain and obey. Skip liquor/school/hotel rules unless they apply here.
+    What the owner must obtain and obey.
+    Skip liquor/school/hotel rules unless Insights support them or owner priority asks for them.
+    If owner priority asks for liquor/music/rooftop and Insights lack it, one sentence under Required Licenses — do not invent.
 
     Concept: {restaurant_concept}
     Location: {city}, {state}
+    Owner priority: {special_note}
 
     Insights:
     {section_insights}
@@ -133,6 +152,7 @@ reporting:
 
     ## Required Licenses
     Bullets: license name and any stated condition.
+    Include music/liquor when Insights have them or owner priority asks and Insights support them.
 
     ## Hours and Staffing
     Bullets.
@@ -152,18 +172,26 @@ reporting:
   risk_assessment_prompt: |
     Drafted section reports, not raw tools. Omit a category with no fact.
     Do not invent typical restaurant risks. Do not compare {investment} to "price for two".
+    Output ONLY the ## risk headings listed below. Never reprint or paraphrase prior section reports,
+    never paste competitor tables, never copy Market Overview / Demand Signals / etc.
 
     Concept: {restaurant_concept}
     Location: {local_area}, {city}
     Investment: {investment}
+    Owner priority: {special_note}
 
-    Section reports:
+    Section reports (extract risks from these; do not copy them):
     {section_insights}
 
     {common_rules}
 
-    Each risk as bullets: Description. Evidence (from a report). Severity High/Medium/Low.
-    Mitigation the owner can do (not city signals). Prefer 2–3 evidenced risks per category you keep.
+    Each risk as bullets: 
+    Description.
+    Severity(High/Medium/Low).
+    Mitigation the owner can do (not city signals). 
+    Prefer 2–3 evidenced risks per category you keep.
+    If owner priority is set: one evidenced risk about it
+    Note — do not invent mitigations that assume the priority is a proven gap.
 
     ## Market Risks
     Demand, named competitors, saturation from stated counts.
@@ -172,7 +200,7 @@ reporting:
     Congestion, parking, named anchors.
 
     ## Operational Risks
-    License time, hours, food-safety / penalty facts.
+    License time, hours, food-safety / penalty facts; music/liquor only if reports mention them.
 
     ## Financial Risks
     Ticket prices vs this concept; stated fees vs {investment} only if costs appear.
@@ -188,11 +216,20 @@ reporting:
     Concept: {restaurant_concept}
     Location: {local_area}, {city}
     Investment: {investment}
+    Owner priority: {special_note}
 
     Section reports:
     {section_insights}
 
     {common_rules}
+
+    Owner priority is a writing focus, not a proven market gap.
+    If reports lack evidence for priority features (e.g. rooftop / liquor demand / live music):
+    - Opportunities: cuisine, competition, location facts only — do not list those features as opportunities.
+    - Recommended Positioning: do not lead with those features; one sentence that reports lack evidence.
+    - Before Lease: at most one step to validate the priority on site / in licenses.
+    - Recommendation: CONDITIONAL GO (or GO only on evidenced cuisine/location/competition).
+      Never make unevidenced priority the reason for GO.
 
     ## Strategic Opportunities
     Bullets, each tied to a report fact.
@@ -214,5 +251,5 @@ reporting:
     Bullets — evidenced risks only.
 
     ## Recommendation
-    One line: GO / CONDITIONAL GO / NO GO, justified by the reports.
+    One line: GO / CONDITIONAL GO / NO GO. Justify only with evidenced report facts.
     *Sources: section report titles*

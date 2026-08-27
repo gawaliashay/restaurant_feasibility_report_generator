@@ -1,4 +1,4 @@
-# Restaurant Feasibility Report
+# Restaurant Feasibility Report Generator
 
 A founder putting money into a site needs a **local** answer: this cuisine, this neighbourhood, this budget — not a national “F&B is growing” essay.
 
@@ -35,14 +35,16 @@ You set concept, neighbourhood, city, and investment. The document answers, in o
 
 **What real data the owner gets, and why it helps**
 
-| In the report | Real data | Why it helps the owner |
-|---------------|-----------|------------------------|
-| Market | Search + Google Trends for this cuisine / this city | See if interest is real and steady, not a national “F&B is growing” claim |
-| Competitors | Google Maps: nearby kitchens, ratings, review counts, prices | See who already owns the street before you copy a menu or a ticket |
-| Location | Maps + local search: access, landmarks, traffic | Check whether customers can actually reach the site |
-| Demographics | Local population and spend signals from web sources | Match hours and menu to who lives and works nearby |
-| Compliance | Official FSSAI / shops text from the RAG store | Know licenses, hours, and penalties before rent starts |
-| Risk + strategy | Built from the sections above | Plain list of what can fail, then GO / CONDITIONAL GO / NO GO |
+
+| In the report   | Real data                                                    | Why it helps the owner                                                    |
+| --------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| Market          | Search + Google Trends for this cuisine / this city          | See if interest is real and steady, not a national “F&B is growing” claim |
+| Competitors     | Google Maps: nearby kitchens, ratings, review counts, prices | See who already owns the street before you copy a menu or a ticket        |
+| Location        | Maps + local search: access, landmarks, traffic              | Check whether customers can actually reach the site                       |
+| Demographics    | Local population and spend signals from web sources          | Match hours and menu to who lives and works nearby                        |
+| Compliance      | Official FSSAI / shops text from the RAG store               | Know licenses, hours, and penalties before rent starts                    |
+| Risk + strategy | Built from the sections above                                | Plain list of what can fail, then GO / CONDITIONAL GO / NO GO             |
+
 
 Change concept or location and run again. Same report shape — for example a Baner momo report and a Kothrud Italian report — without rewriting the product.
 
@@ -75,11 +77,13 @@ Concept + location + investment
      Compiler                no LLM · Markdown + JSON
 ```
 
-| Stage | Chat LLM | Responsibility |
-|--------|----------|----------------|
-| Research | No | Fan-out per YAML section; validate and cap evidence |
-| Report | Yes (default OpenAI `gpt-4o-mini`) | One prompt per section; risk/strategy use other drafts |
-| Compile | No | Headings, executive summary, GO/NO GO + next steps |
+
+| Stage    | Chat LLM                           | Responsibility                                         |
+| -------- | ---------------------------------- | ------------------------------------------------------ |
+| Research | No                                 | Fan-out per YAML section; validate and cap evidence    |
+| Report   | Yes (default OpenAI `gpt-4o-mini`) | One prompt per section; risk/strategy use other drafts |
+| Compile  | No                                 | Headings, executive summary, GO/NO GO + next steps     |
+
 
 LangGraph state is a `TypedDict` with reducers so parallel nodes merge. Pydantic (`EvidenceItem`, `ResearchSectionResult`, `ReportSectionResult`) validates payloads at node boundaries.
 
@@ -91,28 +95,32 @@ YAML **names** tools; `src/common/tools/tool_registry.py` **maps** names to func
 
 Configured under `report.sections` in `src/configuration/configs.yaml`.
 
-| Section | Question it answers | Evidence |
-|---------|---------------------|----------|
-| Market analysis | Is there demand for this format? | Trends + web search |
-| Competitive analysis | Who operates nearby, and at what price? | Maps + web search |
-| Location analysis | Is the locality workable as a site? | Maps + web search |
-| Customer demographics | Who lives here? | Web search |
-| Compliance | What must the owner obtain and obey? | RAG corpus |
-| Risk assessment | What can go wrong, with evidence? | The five drafts above |
+
+| Section                   | Question it answers                                   | Evidence              |
+| ------------------------- | ----------------------------------------------------- | --------------------- |
+| Market analysis           | Is there demand for this format?                      | Trends + web search   |
+| Competitive analysis      | Who operates nearby, and at what price?               | Maps + web search     |
+| Location analysis         | Is the locality workable as a site?                   | Maps + web search     |
+| Customer demographics     | Who lives here?                                       | Web search            |
+| Compliance                | What must the owner obtain and obey?                  | RAG corpus            |
+| Risk assessment           | What can go wrong, with evidence?                     | The five drafts above |
 | Strategic recommendations | Positioning, action plan, GO / CONDITIONAL GO / NO GO | Drafts including risk |
 
-Competitor tables use **Google Maps** ratings and review counts (rows with **20 or more** Maps reviews). Citations are inline (`*Sources: …*`). Prompts instruct the model to stay on Insights (no invented market sizes or placeholder `N/A` cells).
+
+Competitor tables use **Google Maps** ratings and review counts (rows with **20 or more** Maps reviews). Citations are inline (`*Sources: …`*). Prompts instruct the model to stay on Insights (no invented market sizes or placeholder `N/A` cells).
 
 ---
 
 ## Tools
 
-| Name | Provider | Role |
-|------|----------|------|
-| `tavily_search` | Tavily | Market, location, and demographic web results |
-| `google_maps` | SerpAPI (`google_local`) | Competitors and nearby anchors |
-| `google_trends` | SerpAPI | Interest over time |
-| `rag` | Qdrant retrieve | Licenses, hours, penalties |
+
+| Name            | Provider                 | Role                                          |
+| --------------- | ------------------------ | --------------------------------------------- |
+| `tavily_search` | Tavily                   | Market, location, and demographic web results |
+| `google_maps`   | SerpAPI (`google_local`) | Competitors and nearby anchors                |
+| `google_trends` | SerpAPI                  | Interest over time                            |
+| `rag`           | Qdrant retrieve          | Licenses, hours, penalties                    |
+
 
 Compliance ingest (`python -m src.rag.ingest_all`) loads `rag_sources`: local PDFs, websites, and PDFs fetched by URL. At runtime the RAG tool **retrieves** only (`top_k`, score threshold, chunk length). Execution path: [ARCHITECTURE.md](ARCHITECTURE.md#tool-pipeline) and [RAG pipeline](ARCHITECTURE.md#rag-pipeline).
 
@@ -140,11 +148,13 @@ pytest tests/ -q
 
 No CLI flags on the product run. `pipeline` is research → report → compile → save.
 
-| Command | What it does |
-|---------|----------------|
-| `python -m src.pipeline_runners.pipeline` | Full run. Writes `reports/report_*.md` and `.json`, plus `processed_evidence/research_results_*.json` |
-| `python -m src.pipeline_runners.research_pipeline_runner` | Research graph only. Writes `processed_evidence/research_results_*.json` |
-| `python -m src.pipeline_runners.report_pipeline_runner` | Report + compile from the **newest** saved research JSON. Writes `reports/report_*.md` and `.json` |
+
+| Command                                                   | What it does                                                                                          |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `python -m src.pipeline_runners.pipeline`                 | Full run. Writes `reports/report_*.md` and `.json`, plus `processed_evidence/research_results_*.json` |
+| `python -m src.pipeline_runners.research_pipeline_runner` | Research graph only. Writes `processed_evidence/research_results_*.json`                              |
+| `python -m src.pipeline_runners.report_pipeline_runner`   | Report + compile from the **newest** saved research JSON. Writes `reports/report_*.md` and `.json`    |
+
 
 RAG ingest is not a pipeline stage: `python -m src.rag.ingest_all` fills Qdrant. Retrieve runs inside research (compliance).
 

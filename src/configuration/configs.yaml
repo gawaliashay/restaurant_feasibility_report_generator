@@ -12,7 +12,7 @@ apis:
 
 business_case:
   default:
-    restaurant_concept: "Italian Restaurant"
+    restaurant_concept: "multi cuisine restaurant"
     location:
       society: "karishma society"
       local_area: "kothrud"
@@ -22,7 +22,7 @@ business_case:
       pincode: "411038"
     investment: "₹350,000"
     target_demographic: "Professionals 25-45, health-conscious"
-    special_note: "demand, spending power, competition density"
+    special_note: "Also give insights on seating capasity, dining, liquor, live music etc. if it is available."
 
 research:
   sections:
@@ -168,7 +168,7 @@ models:
       max_tokens: 1024
 
 resource_limits:
-  mode: fast
+  mode: quality
 
   fast:
     max_evidence_chars_per_section: 2000
