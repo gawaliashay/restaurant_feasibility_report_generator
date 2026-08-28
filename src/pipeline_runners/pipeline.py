@@ -1,11 +1,4 @@
-"""
-Full run: research → report → compile → save Markdown and JSON.
-
-Also saves research evidence JSON so report_pipeline_runner can reuse it.
-
-From the repo root:
-    python -m src.pipeline_runners.pipeline
-"""
+"""Full run: research → report → compile → export. Saves evidence JSON for report-only reruns."""
 
 import json
 import os
@@ -44,37 +37,28 @@ def build_state() -> WorkflowState:
     }
 
 
-def _processed_evidence_dir() -> str:
-    return (
-        config_loader.get("paths.processed_evidence") or "processed_evidence"
-    ).rstrip("/\\")
-
-
 def save_research_results(results: dict) -> str:
-    """Write evidence packet for later report-only runs."""
-    evidence_dir = _processed_evidence_dir()
+    evidence_dir = (config_loader.get("paths.processed_evidence") or "processed_evidence").rstrip("/\\")
     os.makedirs(evidence_dir, exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     path = os.path.join(evidence_dir, f"research_results_{stamp}.json")
-    payload = {
-        "timestamp": datetime.now().isoformat(),
-        "total_sections": len(results),
-        "results": results,
-    }
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2, default=str)
+        json.dump(
+            {"timestamp": datetime.now().isoformat(), "total_sections": len(results), "results": results},
+            f,
+            indent=2,
+            default=str,
+        )
     return path
 
 
 def main() -> None:
     state = build_state()
     state = ResearchWorkflow().run(state)
-    evidence_path = save_research_results(state.get("research_results", {}))
-    print("Wrote", evidence_path)
+    print("Wrote", save_research_results(state.get("research_results", {})))
 
     state = ReportWorkflow().run(state)
-    markdown = ReportCompiler().compile(dict(state))
-    files = export_report(markdown, dict(state))
+    files = export_report(ReportCompiler().compile(dict(state)), dict(state))
     state["export_paths"] = files
     print("Wrote", files["md"])
     print("Wrote", files["json"])

@@ -42,3 +42,6 @@ dependencies = [
     "langchain-google-genai>=4.3.3",
     "sentence-transformers>=5.7.0",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

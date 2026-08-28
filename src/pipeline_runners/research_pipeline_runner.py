@@ -1,9 +1,4 @@
-"""
-Stage check: research only (tools, including RAG retrieve). Saves JSON for the report runner.
-
-From the repo root:
-    python -m src.pipeline_runners.research_pipeline_runner
-"""
+"""Research only (tools + RAG). Saves evidence JSON for report_pipeline_runner."""
 
 import sys
 from pathlib import Path
@@ -16,16 +11,11 @@ from src.workflow.research.research_workflow import ResearchWorkflow
 
 
 def main() -> None:
-    state = build_state()
-    state = ResearchWorkflow().run(state)
+    state = ResearchWorkflow().run(build_state())
     results = state.get("research_results", {})
-
-    path = save_research_results(results)
-
     for name, section in results.items():
-        n = len(section.get("evidence", []))
-        print(f"{name}: {n} evidence items ({section.get('status')})")
-    print("Wrote", path)
+        print(f"{name}: {len(section.get('evidence', []))} evidence items ({section.get('status')})")
+    print("Wrote", save_research_results(results))
 
 
 if __name__ == "__main__":

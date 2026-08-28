@@ -1,72 +1,35 @@
-# src\configuration\prompts_loader.py
+# src/configuration/prompts_loader.py
+
+"""Load prompts.yaml; return template strings by section and name."""
 
 import yaml
 from pathlib import Path
-from typing import Dict, Any, Optional
-from langchain_core.prompts import ChatPromptTemplate
-from src.logging_exception.logging.logger import logger
+from typing import Any
+
 from src.logging_exception.exception.custom_exception import CustomException
+from src.logging_exception.logging.logger import logger
 
 
 class PromptsLoader:
-    """Load and access YAML-based prompt configurations for Restaurant Research System."""
-
     def __init__(self, path: str = "src/configuration/prompts.yaml"):
         self.path = Path(path)
-        self.prompts: Dict[str, Any] = self._load_yaml()
-
-    def _load_yaml(self) -> Dict[str, Any]:
-        """Load YAML into a dictionary."""
         if not self.path.exists():
             raise FileNotFoundError(f"Prompts file not found: {self.path}")
-
         try:
-            with open(self.path, "r", encoding="utf-8") as f:
-                data = yaml.safe_load(f) or {}
-            
-            logger.info(f"Prompts loaded successfully from: {self.path}")
-            return data
-        except Exception as e:
-            logger.error(f"Failed to load prompts from {self.path}: {e}")
-            raise CustomException(f"Failed to load prompts from {self.path}", e)
+            with open(self.path, encoding="utf-8") as f:
+                self.prompts: dict[str, Any] = yaml.safe_load(f) or {}
+            logger.info("Prompts loaded", path=str(self.path))
+        except Exception as exc:
+            raise CustomException(f"Failed to load prompts from {self.path}", exc)
 
-    def get_prompt(self, section: str, name: str, default: Optional[str] = None) -> str:
-        """Return prompt template string for given section and name."""
-        try:
-            prompt_text = self.prompts.get(section, {}).get(name)
-            if prompt_text is None:
-                if default is not None:
-                    logger.warning(f"Prompt not found: {section}.{name}, using default")
-                    return default
-                raise KeyError(f"Prompt not found: {section}.{name}")
-            return prompt_text
-        except Exception as e:
-            logger.error(f"Error getting prompt {section}.{name}: {e}")
+    def get_prompt(self, section: str, name: str, default: str | None = None) -> str:
+        text = self.prompts.get(section, {}).get(name)
+        if text is None:
             if default is not None:
+                logger.warning("Prompt not found, using default", section=section, name=name)
                 return default
-            raise
-
-    def get_chat_prompt(self, section: str, name: str, default: Optional[str] = None) -> ChatPromptTemplate:
-        """Return a ChatPromptTemplate for given section and name."""
-        prompt_text = self.get_prompt(section, name, default)
-        return ChatPromptTemplate.from_template(prompt_text)
-
-    def get_section(self, section: str) -> Dict[str, str]:
-        """Return all prompts in a section."""
-        return self.prompts.get(section, {})
-
-    def get_all_prompts(self) -> Dict[str, Any]:
-        """Return all loaded prompts."""
-        return self.prompts
-
-    def list_sections(self) -> list:
-        """Return list of all available sections."""
-        return list(self.prompts.keys())
-
-    def list_prompts_in_section(self, section: str) -> list:
-        """Return list of all prompt names in a section."""
-        return list(self.prompts.get(section, {}).keys())
+            raise KeyError(f"Prompt not found: {section}.{name}")
+        return text
 
 
-# Ready-to-use instance
 prompts_loader = PromptsLoader()

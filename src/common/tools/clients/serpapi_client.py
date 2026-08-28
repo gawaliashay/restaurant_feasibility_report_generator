@@ -4,15 +4,13 @@
 SerpAPI client for Google Maps and Google Trends.
 """
 
-import logging
 from functools import lru_cache
 from typing import Any
 
 import requests
 
 from src.configuration.config_loader import config_loader
-
-logger = logging.getLogger(__name__)
+from src.logging_exception.logging.logger import logger
 
 
 @lru_cache(maxsize=1)
@@ -69,10 +67,10 @@ def google_maps(query: str, location: str) -> dict[str, Any]:
         return _ok("google_maps", [])
 
     except requests.exceptions.RequestException as e:
-        logger.exception("Google Maps request failed: %s", e)
+        logger.exception("Google Maps request failed", error=str(e))
         return _failed("google_maps", str(e))
     except Exception as e:
-        logger.exception("Google Maps failed: %s", e)
+        logger.exception("Google Maps failed", error=str(e))
         return _failed("google_maps", str(e))
 
 
@@ -121,8 +119,8 @@ def google_trends(query: str) -> dict[str, Any]:
         return _ok("google_trends", [])
 
     except requests.exceptions.RequestException as e:
-        logger.exception("Google Trends request failed: %s", e)
+        logger.exception("Google Trends request failed", error=str(e))
         return _failed("google_trends", str(e))
     except Exception as e:
-        logger.exception("Google Trends failed: %s", e)
+        logger.exception("Google Trends failed", error=str(e))
         return _failed("google_trends", str(e))

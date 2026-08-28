@@ -1,8 +1,4 @@
-# src/workflow/report/report_exporter.py
-
-"""
-Write the compiled report to markdown and JSON.
-"""
+"""Write compiled report to markdown and JSON."""
 
 import json
 import os
@@ -11,23 +7,17 @@ from datetime import datetime
 from src.configuration.config_loader import config_loader
 
 
-def _reports_dir() -> str:
-    return (config_loader.get("paths.reports") or "reports").rstrip("/\\")
-
-
 def export_report(report: str, state: dict) -> dict:
-    """Export report to MD and JSON. Returns {md: path, json: path}."""
-    reports_dir = _reports_dir()
+    reports_dir = (config_loader.get("paths.reports") or "reports").rstrip("/\\")
     os.makedirs(reports_dir, exist_ok=True)
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    base = os.path.join(reports_dir, f"report_{timestamp}")
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    md_path = os.path.join(reports_dir, f"report_{stamp}.md")
+    json_path = os.path.join(reports_dir, f"report_{stamp}.json")
 
-    md_path = f"{base}.md"
     with open(md_path, "w", encoding="utf-8") as f:
         f.write(report)
 
-    json_path = f"{base}.json"
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(
             {

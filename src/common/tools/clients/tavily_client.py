@@ -4,15 +4,13 @@
 Tavily web search client.
 """
 
-import logging
 from functools import lru_cache
 from typing import Any
 
 from langchain_tavily import TavilySearch
 
 from src.configuration.config_loader import config_loader
-
-logger = logging.getLogger(__name__)
+from src.logging_exception.logging.logger import logger
 
 
 @lru_cache(maxsize=1)
@@ -28,7 +26,7 @@ def _get_client() -> TavilySearch | None:
         return TavilySearch(max_results=max_results, tavily_api_key=api_key)
     
     except Exception as e:
-        logger.exception(f"Failed to initialize Tavily: {e}")
+        logger.exception("Failed to initialize Tavily", error=str(e))
         return None
 
 
@@ -45,5 +43,5 @@ def tavily_search(query: str) -> dict[str, Any]:
         results = response.get("results", [])
         return {"tool": "tavily_search", "status": "success", "data": results, "error": None}
     except Exception as e:
-        logger.exception("Tavily search failed: %s", e)
+        logger.exception("Tavily search failed", error=str(e))
         return {"tool": "tavily_search", "status": "failed", "data": [], "error": str(e)}

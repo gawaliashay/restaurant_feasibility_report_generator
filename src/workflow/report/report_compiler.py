@@ -1,8 +1,6 @@
 # src/workflow/report/report_compiler.py
 
-"""
-Stack section reports into one markdown document. No LLM.
-"""
+"""Stack section reports into one markdown document. No LLM."""
 
 from datetime import datetime
 from typing import Any
@@ -11,12 +9,14 @@ from src.configuration.config_loader import config_loader
 
 
 class ReportCompiler:
-    """Compile the final report from section_reports."""
-
     def compile(self, state: dict[str, Any]) -> str:
         reports = state.get("section_reports", {})
         research = state.get("research_results", {})
-        total = self._evidence_count(research)
+        total = sum(
+            len(research.get(name, {}).get("evidence", []))
+            for name, cfg in config_loader.get("research.sections", {}).items()
+            if cfg.get("enabled", True)
+        )
         parts = [
             self._header(state),
             self._summary(state, total, reports),
@@ -24,13 +24,6 @@ class ReportCompiler:
             self._conclusion(state, total, reports),
         ]
         return "\n\n".join(part for part in parts if part)
-
-    def _evidence_count(self, research: dict) -> int:
-        total = 0
-        for name, config in config_loader.get("research.sections", {}).items():
-            if config.get("enabled", True):
-                total += len(research.get(name, {}).get("evidence", []))
-        return total
 
     def _title(self, config: dict, name: str) -> str:
         return config.get("title", name).replace(" Report", "")
@@ -56,9 +49,7 @@ class ReportCompiler:
             "",
         ]
         for name, config in config_loader.get("report.sections", {}).items():
-            if name == "strategic_recommendations":
-                continue
-            if not config.get("enabled", True):
+            if name == "strategic_recommendations" or not config.get("enabled", True):
                 continue
             result = reports.get(name, {})
             if result.get("status") != "success":
@@ -80,10 +71,8 @@ class ReportCompiler:
             text = (result.get("report") or "").strip()
             if not text:
                 continue
-            # Section title is ##; LLM ## headings become ###.
             body = "\n".join(
-                "#" + line if line.startswith("## ") else line
-                for line in text.split("\n")
+                "#" + line if line.startswith("## ") else line for line in text.split("\n")
             )
             parts.append(f"## {self._title(config, name)}\n\n{body}\n\n---")
         return "\n".join(parts)
@@ -93,11 +82,9 @@ class ReportCompiler:
             clean = line.strip()
             if not clean or len(clean) <= 10:
                 continue
-            if clean[0] in "#|-*":
+            if clean[0] in "#|-*" or clean.lower().startswith("sources:"):
                 continue
             if clean[0].isdigit() and ". " in clean[:4]:
-                continue
-            if clean.lower().startswith("sources:"):
                 continue
             idx = clean.find(". ")
             if idx > 20:
@@ -133,9 +120,7 @@ class ReportCompiler:
         for line in text.split("\n"):
             clean = line.strip()
             upper = clean.upper()
-            if upper.startswith("GO,") or upper.startswith("GO ") or upper in ("GO", "NO GO"):
-                return clean[:400]
-            if upper.startswith("CONDITIONAL GO"):
+            if upper.startswith(("GO,", "GO ", "CONDITIONAL GO")) or upper in ("GO", "NO GO"):
                 return clean[:400]
         return ""
 

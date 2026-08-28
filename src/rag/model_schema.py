@@ -1,46 +1,27 @@
-"""
-Generic data schemas for RAG pipeline.
-
-Contains:
-- ParsedDocument
-- DocumentChunk
-- RetrievedChunk
-
-No business-specific fields.
-"""
+"""RAG dataclasses: parsed docs, chunks for ingest, chunks from retrieve."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict
+from typing import Any
 
 
 @dataclass
 class ParsedDocument:
-    """Represents parsed document content. Output of parser layer."""
     content: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     file_name: str = ""
-
-    @property
-    def text_length(self) -> int:
-        return len(self.content)
 
 
 @dataclass
 class DocumentChunk:
-    """Represents a chunk created during ingestion. Used before storing."""
     text: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"text": self.text, "metadata": self.metadata}
 
 
 @dataclass
 class RetrievedChunk:
-    """Represents a retrieved document chunk. Output of retriever layer."""
     text: str
     score: float
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {"text": self.text, "score": self.score, "metadata": self.metadata}
+    metadata: dict[str, Any] = field(default_factory=dict)

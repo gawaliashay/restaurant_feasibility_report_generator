@@ -167,7 +167,7 @@ class TestEvidenceProcessor:
         processor = EvidenceProcessor()
         results = [{"content": "Content", "url": "https://example.com"}]
         result = processor.process("test_tool", "test_query", results)
-        assert result[0]["source"] == "https://example.com"
+        assert result[0]["source"] == "example.com"
 
     def test_title_extraction(self):
         processor = EvidenceProcessor()

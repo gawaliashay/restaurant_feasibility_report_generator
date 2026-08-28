@@ -97,19 +97,6 @@ class TestResearchWorkflow:
 
     @patch("src.workflow.research.research_workflow.ResearchSectionRunner")
     @patch("src.workflow.research.research_workflow.config_loader")
-    def test_build_workflow(self, mock_config, mock_runner):
-        """Test building workflow graph."""
-        sections = {
-            "section1": {"enabled": True, "tools": ["test_tool"]},
-        }
-
-        workflow = ResearchWorkflow()
-        # Pass sections to _build_workflow
-        graph = workflow._build_workflow(sections)
-        assert graph is not None
-
-    @patch("src.workflow.research.research_workflow.ResearchSectionRunner")
-    @patch("src.workflow.research.research_workflow.config_loader")
     def test_create_section_node(self, mock_config, mock_runner):
         """Test creating a section node."""
         mock_config.get.return_value = {
@@ -129,11 +116,8 @@ class TestResearchWorkflow:
             state = {"research_results": {}, "errors": []}
             
             # With no sections, workflow should return empty results
-            # The workflow's _build_workflow should handle empty sections
             try:
                 result = workflow.run(state)
                 assert result["research_results"] == {}
             except ValueError:
-                # If it raises ValueError, skip the test
-                # This means the workflow needs to handle empty sections gracefully
                 pytest.skip("Workflow needs to handle empty sections gracefully")

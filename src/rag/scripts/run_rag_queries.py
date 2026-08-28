@@ -1,6 +1,6 @@
-# test_rag_queries.py
+# run_rag_queries.py
 """
-Test RAG retrieval with different queries.
+Manual RAG query smoke test — run: python -m src.rag.scripts.run_rag_queries
 """
 
 from src.rag.retriever.retriever import get_retriever

@@ -12,12 +12,13 @@ if str(project_root) not in sys.path:
 
 from unittest.mock import MagicMock, patch
 
-from src.common.tools.tool_pipeline import _validate_params, get_available_tools, run_tool
+from src.common.tools.tool_registry import TOOLS
+from src.common.tools.tool_pipeline import _validate_params, run_tool
 
 
 class TestToolPipeline:
     def test_get_available_tools(self):
-        tools = get_available_tools()
+        tools = list(TOOLS.keys())
         assert isinstance(tools, list)
 
     def test_run_tool_unknown_tool(self):

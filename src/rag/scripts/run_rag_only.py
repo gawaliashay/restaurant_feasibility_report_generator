@@ -1,6 +1,6 @@
-# test_rag_only.py
+# run_rag_only.py
 """
-Test RAG retrieval without running the full pipeline.
+Manual RAG smoke test — run: python -m src.rag.scripts.run_rag_only
 """
 
 from src.rag.retriever.retriever import get_retriever

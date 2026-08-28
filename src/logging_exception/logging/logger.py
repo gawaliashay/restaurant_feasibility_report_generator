@@ -92,7 +92,7 @@ def _quiet_noisy_loggers() -> None:
         logging.getLogger(name).setLevel(logging.WARNING)
 
 
-def _setup_logging() -> str:
+def _setup_logging() -> None:
     run_id = generate_uuid()
     bind_contextvars(run_id=run_id)
 
@@ -141,8 +141,6 @@ def _setup_logging() -> str:
         logging.root.addHandler(console)
         structlog.get_logger(__name__).info("Log run started", run_id=run_id)
 
-    return run_id
 
-
-run_id = _setup_logging()
+_setup_logging()
 logger = structlog.get_logger(__name__)
