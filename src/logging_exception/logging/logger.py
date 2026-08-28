@@ -1,175 +1,148 @@
 # src\logging_exception\logging\logger.py
 
 """
-Simple structured logger with run_id tracking.
+Structured logging: run_id, rotating file, readable console, sensitive-field masking.
 """
 
-import os
-import sys
 import logging
-import inspect
-from logging.handlers import RotatingFileHandler
+import os
+import re
+import sys
 from datetime import datetime
+from logging.handlers import RotatingFileHandler
+
 import structlog
 from structlog.contextvars import bind_contextvars
 
 from src.utils.create_unique_uuid import generate_uuid
 
-# =====================================
-# CONFIG
-# =====================================
 LOG_CONSOLE_DEV = os.getenv("LOG_CONSOLE_DEV", "1") == "1"
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_DIR = (os.getenv("LOG_DIRECTORY") or "logs").rstrip("/\\")
 
-PROJECT_ROOT = os.path.abspath(os.getcwd()).replace("\\", "/")
-LOGGER_PATH = os.path.abspath(__file__).replace("\\", "/")
+_SENSITIVE_KEYS = frozenset({
+    "api_key", "secret", "token", "password", "passwd", "key",
+    "auth", "authorization", "bearer", "credential", "pwd",
+    "access_token", "refresh_token", "client_secret", "private_key",
+})
+
+_INLINE_SECRET = re.compile(
+    r"(api_key|secret|token|password|authorization|bearer)\s*[=:]\s*\S+",
+    re.IGNORECASE,
+)
+
+_SKIP_CONSOLE_KEYS = frozenset({
+    "event", "level", "timestamp", "run_id", "positional_args",
+    "logger", "logger_name", "_record", "_from_structlog",
+})
+
+_SHARED_PROCESSORS = [
+    structlog.contextvars.merge_contextvars,
+    structlog.stdlib.add_log_level,
+    structlog.processors.TimeStamper(fmt="iso"),
+    structlog.processors.format_exc_info,
+    structlog.stdlib.PositionalArgumentsFormatter(),
+    lambda _l, _m, ed: _mask_event(ed),
+]
 
 
-# =====================================
-# PROCESSORS
-# =====================================
-def add_callsite(logger, method_name, event_dict):
-    """Add file, function, line where log was called."""
-    for frame in inspect.stack():
-        path = frame.filename.replace("\\", "/")
-        if PROJECT_ROOT in path and "/site-packages/" not in path and path != LOGGER_PATH:
-            event_dict["file"] = os.path.basename(path)
-            event_dict["function"] = frame.function
-            event_dict["line"] = frame.lineno
-            break
+def _mask_event(event_dict):
+    """Mask sensitive keys and inline secrets in string values."""
+    for key, value in list(event_dict.items()):
+        if key.lower() in _SENSITIVE_KEYS:
+            event_dict[key] = "[MASKED]"
+        elif isinstance(value, str):
+            event_dict[key] = _INLINE_SECRET.sub(r"\1=[MASKED]", value)
     return event_dict
 
 
-def add_run_id(logger, method_name, event_dict):
-    """Add run_id from context."""
-    ctx = structlog.contextvars.get_contextvars()
-    if "run_id" in ctx:
-        event_dict["run_id"] = ctx["run_id"]
-    return event_dict
+def _readable_console(_logger, _method, event_dict):
+    """One-line console format: time, level, message, optional context."""
+    ts = event_dict.get("timestamp", "")
+    if "T" in ts:
+        ts = ts.split("T", 1)[1][:8]
 
-
-def mask_sensitive(logger, method_name, event_dict):
-    """Mask sensitive data."""
-    sensitive_keys = {'api_key', 'secret', 'token', 'password', 'key'}
-    for key in list(event_dict):
-        if key in sensitive_keys:
-            event_dict[key] = '[MASKED]'
-    return event_dict
-
-
-# =====================================
-# CONSOLE RENDERER (dev only)
-# =====================================
-def console_renderer(logger, method_name, event_dict):
-    """Pretty console output."""
     level = event_dict.get("level", "info").upper()
-    event = event_dict.get("event", "")
-    timestamp = event_dict.get("timestamp", "")[11:19]
-    file_info = event_dict.get("file", "")
-    line = event_dict.get("line", "")
-    function = event_dict.get("function", "")
-    
-    location = f"{file_info}:{line}" if file_info and line else ""
-    if function:
-        location += f" in {function}"
-    
-    log_line = f"[{timestamp}] {level:8} {location}\n    → {event}"
-    
-    # Show extra fields
-    extra = {k: v for k, v in event_dict.items() 
-             if k not in ["timestamp", "level", "event", "file", "function", "line", "run_id"]}
-    if extra:
-        import json
-        log_line += f"\n    └─ {json.dumps(extra, default=str)[:200]}"
-    
-    return log_line
+    if level == "WARNING":
+        level = "WARN"
+    level = level[:4].ljust(4)
+
+    message = str(event_dict.get("event", ""))
+
+    extras = []
+    for key in sorted(event_dict):
+        if key in _SKIP_CONSOLE_KEYS:
+            continue
+        value = event_dict[key]
+        if value is None or value == "":
+            continue
+        text = str(value).replace("\n", " ")
+        if len(text) > 80:
+            text = text[:77] + "..."
+        extras.append(f"{key}={text}")
+
+    line = f"[{ts}] {level} {message}"
+    if extras:
+        line += "  |  " + "  ".join(extras)
+    return line
 
 
-# =====================================
-# LOGGER SETUP
-# =====================================
-class Logger:
-    _instance = None
-    
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-    
-    def __init__(self):
-        if hasattr(self, '_initialized'):
-            return
-        
-        # Generate run_id
-        self.run_id = generate_uuid()
-        bind_contextvars(run_id=self.run_id)
-        
-        # Setup logging
-        self._setup_logging()
-        self._initialized = True
-    
-    def _setup_logging(self):
-        # Clear any existing handlers
-        logging.root.handlers.clear()
-        
-        # Create log directories
-        log_dir = os.path.join(os.getcwd(), "logs")
-        os.makedirs(log_dir, exist_ok=True)
-        os.makedirs(os.path.join(log_dir, "runs"), exist_ok=True)
-        
-        # Log file paths
-        date_str = datetime.now().strftime('%Y%m%d')
-        log_file = os.path.join(log_dir, f"{date_str}.log")
-        run_log = os.path.join(log_dir, "runs", f"run_{self.run_id}.log")
-        
-        # Add file handlers
-        for path in [log_file, run_log]:
-            handler = RotatingFileHandler(path, maxBytes=10_000_000, backupCount=5, encoding="utf-8")
-            handler.setLevel(logging.DEBUG)
-            logging.root.addHandler(handler)
-        
-        # Add console handler (dev only)
-        if LOG_CONSOLE_DEV:
-            console = logging.StreamHandler(sys.stdout)
-            console.setLevel(logging.INFO)
-            logging.root.addHandler(console)
-        
-        logging.root.setLevel(getattr(logging, LOG_LEVEL, logging.INFO))
-        
-        # Configure structlog
-        processors = [
-            structlog.stdlib.filter_by_level,
-            structlog.stdlib.add_log_level,
-            structlog.processors.TimeStamper(fmt="iso"),
-            structlog.processors.format_exc_info,
-            add_callsite,
-            add_run_id,
-            mask_sensitive,
-        ]
-        
-        # Use different renderer for dev/prod
-        if LOG_CONSOLE_DEV:
-            processors.append(console_renderer)
-        else:
-            processors.append(structlog.processors.JSONRenderer())
-        
-        structlog.configure(
-            processors=processors,
-            logger_factory=structlog.stdlib.LoggerFactory(),
-            wrapper_class=structlog.stdlib.BoundLogger,
-            cache_logger_on_first_use=True,
+def _quiet_noisy_loggers() -> None:
+    for name in ("httpx", "httpcore", "urllib3", "openai"):
+        logging.getLogger(name).setLevel(logging.WARNING)
+
+
+def _setup_logging() -> str:
+    run_id = generate_uuid()
+    bind_contextvars(run_id=run_id)
+
+    log_root = os.path.join(os.getcwd(), LOG_DIR)
+    os.makedirs(log_root, exist_ok=True)
+    log_file = os.path.join(log_root, f"{datetime.now():%Y%m%d}.log")
+
+    logging.root.handlers.clear()
+    logging.root.setLevel(getattr(logging, LOG_LEVEL, logging.INFO))
+    _quiet_noisy_loggers()
+
+    structlog.configure(
+        processors=_SHARED_PROCESSORS + [
+            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+        ],
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        wrapper_class=structlog.stdlib.BoundLogger,
+        cache_logger_on_first_use=True,
+    )
+
+    file_formatter = structlog.stdlib.ProcessorFormatter(
+        foreign_pre_chain=_SHARED_PROCESSORS,
+        processors=[
+            structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+            structlog.processors.JSONRenderer(),
+        ],
+    )
+    file_handler = RotatingFileHandler(
+        log_file, maxBytes=10_000_000, backupCount=5, encoding="utf-8",
+    )
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(file_formatter)
+    logging.root.addHandler(file_handler)
+
+    if LOG_CONSOLE_DEV:
+        console_formatter = structlog.stdlib.ProcessorFormatter(
+            foreign_pre_chain=_SHARED_PROCESSORS,
+            processors=[
+                structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+                _readable_console,
+            ],
         )
-    
-    def get_logger(self, name=None):
-        return structlog.get_logger(name or __name__)
-    
-    def get_run_id(self):
-        return self.run_id
+        console = logging.StreamHandler(sys.stdout)
+        console.setLevel(logging.INFO)
+        console.setFormatter(console_formatter)
+        logging.root.addHandler(console)
+        structlog.get_logger(__name__).info("Log run started", run_id=run_id)
+
+    return run_id
 
 
-# =====================================
-# SINGLETON INSTANCE
-# =====================================
-_logger = Logger()
-logger = _logger.get_logger()
-run_id = _logger.get_run_id()
+run_id = _setup_logging()
+logger = structlog.get_logger(__name__)

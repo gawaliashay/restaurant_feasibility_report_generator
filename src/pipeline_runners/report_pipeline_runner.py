@@ -1,7 +1,7 @@
 """
 Stage check: report + compile from saved research JSON (no Maps / Tavily).
 
-Needs a file under processed_evidence/ (run research_pipeline_runner or pipeline first).
+Needs saved research JSON under paths.processed_evidence (run research_pipeline_runner or pipeline first).
 
 From the repo root:
     python -m src.pipeline_runners.report_pipeline_runner
@@ -16,14 +16,16 @@ from pathlib import Path
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from src.pipeline_runners.pipeline import build_state
+from src.pipeline_runners.pipeline import _processed_evidence_dir, build_state
 from src.workflow.report.report_compiler import ReportCompiler
 from src.workflow.report.report_exporter import export_report
 from src.workflow.report.report_workflow import ReportWorkflow
 
 
 def latest_research_path() -> str | None:
-    files = glob.glob("processed_evidence/research_results_*.json")
+    evidence_dir = _processed_evidence_dir()
+    pattern = os.path.join(evidence_dir, "research_results_*.json")
+    files = glob.glob(pattern)
     if not files:
         return None
     return max(files, key=os.path.getctime)
@@ -45,6 +47,7 @@ def main() -> None:
     state = ReportWorkflow().run(state)
     markdown = ReportCompiler().compile(dict(state))
     files = export_report(markdown, dict(state))
+    state["export_paths"] = files
     print("Wrote", files["md"])
     print("Wrote", files["json"])
 

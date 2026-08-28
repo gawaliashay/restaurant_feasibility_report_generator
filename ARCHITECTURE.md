@@ -189,6 +189,19 @@ Limits: `rag_retrieval` in `configs.yaml`. Truncation is in the retriever. No ch
 
 ---
 
+## Output paths
+
+| Layer | What | Example |
+| ----- | ---- | ------- |
+| `.env` | Directory names | `REPORTS_DIRECTORY`, `PROCESSED_EVIDENCE_DIRECTORY` |
+| `configs.yaml` → `paths` | Resolved at load via `${ENV_VAR}` | `paths.reports`, `paths.processed_evidence` |
+| Runners / `export_report` | Read `paths.*`; write files | Evidence JSON + `report_*.md` / `.json` |
+| `WorkflowState.export_paths` | Runtime output (not YAML) | `{"md": "...", "json": "..."}` after export; API download uses this |
+
+Defaults match repo layout: `processed_evidence/`, `reports/`. Change `.env` only — no code edits needed.
+
+---
+
 
 
 ## State contracts

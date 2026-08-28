@@ -21,8 +21,8 @@ class WorkflowState(TypedDict, total=False):
     local_area: str
     city: str
     state: str
-    pincode: str
     country: str
+    pincode: str
 
     # Research Evidence
     research_results: Annotated[dict[str, Any], operator.or_]

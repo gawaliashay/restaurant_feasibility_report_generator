@@ -10,6 +10,14 @@ apis:
     endpoint: ${SERPAPI_ENDPOINT}
     timeout: ${SERPAPI_TIMEOUT}
 
+# Repo-root paths (${ENV_VAR} resolved by config_loader)
+paths:
+  data: ${DATA_PATH}
+  raw_evidence: ${RAW_EVIDENCE_DIRECTORY}
+  processed_evidence: ${PROCESSED_EVIDENCE_DIRECTORY}
+  reports: ${REPORTS_DIRECTORY}
+  logs: ${LOG_DIRECTORY}
+
 business_case:
   default:
     restaurant_concept: "multi cuisine restaurant"
@@ -230,7 +238,7 @@ rag_retrieval:
 
 rag_sources:
   local_pdfs:
-    - path: "data/raw/base_docs/Legal_&_Regulatory_Handbook_for_Restaurants_and_Cafés.pdf"
+    - path: "${DATA_PATH}/raw/base_docs/Legal_&_Regulatory_Handbook_for_Restaurants_and_Cafés.pdf"
       title: "Legal & Regulatory Handbook for Restaurants and Cafés"
       description: "Comprehensive compliance guide for restaurants in India"
   websites:

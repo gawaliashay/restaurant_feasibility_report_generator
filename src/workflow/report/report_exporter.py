@@ -8,13 +8,20 @@ import json
 import os
 from datetime import datetime
 
+from src.configuration.config_loader import config_loader
+
+
+def _reports_dir() -> str:
+    return (config_loader.get("paths.reports") or "reports").rstrip("/\\")
+
 
 def export_report(report: str, state: dict) -> dict:
     """Export report to MD and JSON. Returns {md: path, json: path}."""
-    os.makedirs("reports", exist_ok=True)
+    reports_dir = _reports_dir()
+    os.makedirs(reports_dir, exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    base = f"reports/report_{timestamp}"
+    base = os.path.join(reports_dir, f"report_{timestamp}")
 
     md_path = f"{base}.md"
     with open(md_path, "w", encoding="utf-8") as f:

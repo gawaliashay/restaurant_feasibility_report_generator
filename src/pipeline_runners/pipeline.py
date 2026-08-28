@@ -44,11 +44,18 @@ def build_state() -> WorkflowState:
     }
 
 
+def _processed_evidence_dir() -> str:
+    return (
+        config_loader.get("paths.processed_evidence") or "processed_evidence"
+    ).rstrip("/\\")
+
+
 def save_research_results(results: dict) -> str:
     """Write evidence packet for later report-only runs."""
-    os.makedirs("processed_evidence", exist_ok=True)
+    evidence_dir = _processed_evidence_dir()
+    os.makedirs(evidence_dir, exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    path = f"processed_evidence/research_results_{stamp}.json"
+    path = os.path.join(evidence_dir, f"research_results_{stamp}.json")
     payload = {
         "timestamp": datetime.now().isoformat(),
         "total_sections": len(results),
@@ -68,6 +75,7 @@ def main() -> None:
     state = ReportWorkflow().run(state)
     markdown = ReportCompiler().compile(dict(state))
     files = export_report(markdown, dict(state))
+    state["export_paths"] = files
     print("Wrote", files["md"])
     print("Wrote", files["json"])
 
