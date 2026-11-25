@@ -39,6 +39,12 @@ def google_maps(query: str, location: str) -> dict[str, Any]:
     endpoint = config.get("endpoint")
     timeout = config.get("timeout")
 
+    logger.info(
+    "SerpAPI config",
+    endpoint=endpoint,
+    timeout=timeout,
+)
+
     if not api_key:
         return _failed("google_maps", "SerpAPI key is missing")
     if not endpoint:

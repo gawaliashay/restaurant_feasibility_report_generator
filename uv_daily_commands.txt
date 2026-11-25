@@ -1,92 +1,86 @@
-# UV Daily Commands (Windows CMD)
+# ══════════════════════════════════════════════════════
+# UV COMMANDS — Windows CMD Cheat Sheet
+# ══════════════════════════════════════════════════════
 
-## Activate Environment
+# ── Python Version Management ─────────────────────────
+uv python install 3.13           # Install a Python version
+uv python list                   # List available/installed versions
+uv python list --only-installed  # Show only installed versions
+uv python find                   # Show path to active Python
+uv python pin 3.13               # Pin project to Python 3.13
 
-```cmd
+# ── Environment Creation ──────────────────────────────
+uv venv                          # Create .venv with default Python
+uv venv --python 3.13            # Create with specific Python version
+uv venv .venv                    # Explicit path (same as default)
+uv venv --allow-missing          # Auto-download Python if missing
+uv venv --seed                   # Create with pip/setuptools/wheel
+
+# ── Project Initialization ────────────────────────────
+uv init                          # Full project (README, src/, .gitignore)
+uv init --bare                   # Minimal pyproject.toml only
+uv init --package                # Publishable package layout
+uv init --script file.py         # Script with PEP 723 inline metadata
+uv sync                          # Install deps + create .venv if needed
+uv sync --all-groups             # Install all dependency groups
+uv sync --frozen                 # Strict install from lockfile only
+
+# ── Activation (Windows CMD) ──────────────────────────
 .venv\Scripts\activate
-```
-
-## Deactivate
-
-```cmd
 deactivate
-```
 
-## Install Project Dependencies
+# ── Package Management ────────────────────────────────
+uv add <package>                 # Add + update pyproject.toml + sync
+uv add <pkg>==2.31.0             # Pin exact version
+uv add --dev <package>           # Add dev dependency
+uv add --optional feature <pkg>  # Add optional dependency
+uv add --git <URL>               # Add from Git repo
+uv add -e ./local-pkg            # Editable install of local package
+uv remove <package>              # Remove dependency
+uv lock                          # Resolve into uv.lock
+uv lock --upgrade                # Upgrade all locked versions
+uv lock --upgrade-package <pkg>  # Upgrade one package
+uv lock --check                  # Verify lock is up-to-date
 
-```cmd
-uv sync
-```
+# ── Running ───────────────────────────────────────────
+uv run python pipeline.py        # Auto-syncs, then runs (RECOMMENDED)
+uv run pytest                    # Run tests in project env
+uv run --with rich python app.py # Run with temporary dependency
+uv run --python 3.11 python x.py # Run with specific Python
+python pipeline.py               # Only after activation
 
-## Add Package
+# ── Inspection ────────────────────────────────────────
+uv pip list                      # Installed packages
+uv pip list --outdated           # Show upgradable packages
+uv pip show <package>            # Package details
+uv pip freeze                    # Requirements-format output
+uv tree                          # Dependency tree
 
-```cmd
-uv add <package>
-```
+# ── pip-Compatible Interface (for non-project use) ────
+uv pip install <package>         # Install into current .venv
+uv pip install -r req.txt        # Install from requirements file
+uv pip uninstall <package>       # Uninstall package
+uv pip compile req.in -o req.txt # Compile dependencies
 
-Example:
+# ── Export / Interop ──────────────────────────────────
+uv export --format requirements-txt > requirements.txt  # Export lock
 
-```cmd
-uv add langchain-openai
-```
+# ── Tools (pipx replacement) ──────────────────────────
+uvx ruff check .                 # Run tool without installing
+uv tool install ruff             # Install tool globally
+uv tool list                     # List installed tools
+uv tool upgrade ruff             # Upgrade a tool
+uv tool uninstall ruff           # Remove a tool
 
-## Remove Package
+# ── Build & Publish ───────────────────────────────────
+uv build                         # Build wheel + sdist
+uv build --wheel                 # Build wheel only
+uv publish                       # Publish to PyPI
 
-```cmd
-uv remove <package>
-```
+# ── Cache & Maintenance ───────────────────────────────
+uv cache dir                     # Show cache location
+uv cache clean                   # Clear cache
+uv self update                   # Update uv itself
 
-## Run Project
-
-```cmd
-uv run python pipeline.py
-```
-
-or (after activation)
-
-```cmd
-python pipeline.py
-```
-
-## Show Installed Packages
-
-```cmd
-uv pip list
-```
-
-## Show Dependency Tree
-
-```cmd
-uv tree
-```
-
-## Update Dependencies
-
-```cmd
-uv lock --upgrade
-uv sync
-```
-
-## Create Virtual Environment
-
-```cmd
-uv venv --python 3.13
-```
-
-## Install Python
-
-```cmd
-uv python install 3.13
-```
-
-## List Python Versions
-
-```cmd
-uv python list
-```
-
-## Check uv Version
-
-```cmd
+# ── Version Check ─────────────────────────────────────
 uv --version
-```

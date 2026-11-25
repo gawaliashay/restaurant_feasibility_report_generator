@@ -128,11 +128,6 @@ data/raw/base_docs/
 *.docx
 *.doc
 
-# =====================================
-# PRIVATE DATA
-# =====================================
-INTERVIEW_QA.md
-steps_for_improvement.md
 
 # =====================================
 # VECTOR STORES
@@ -467,3 +462,12 @@ release/
 *.jsx
 .eslintcache
 .stylelintcache
+
+
+# =====================================
+# PRIVATE DATA
+# =====================================
+INTERVIEW_QA.md
+steps_for_improvement.md
+interview_docs/
+uv_daily_commands.txt

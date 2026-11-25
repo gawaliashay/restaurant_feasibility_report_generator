@@ -69,8 +69,9 @@ research:
         - tavily_search
       queries:
         google_maps:
-          - "colleges offices shopping centers in {local_area}, {city}"
-          - "Corporate companies commercial hubs in {local_area}, {city}"
+          - "colleges offices in {local_area}, {city}"
+          - "shopping centers in {local_area}, {city}"
+          - "Corporate companies in {local_area}, {city}"
         tavily_search:
           - "{local_area} {city} commercial residential development"
           - "{local_area} {city} connectivity parking public transport"

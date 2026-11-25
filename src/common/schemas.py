@@ -3,7 +3,7 @@
 """
 Pipeline contracts for research and report nodes.
 
-LangGraph state stays a TypedDict (needed for reducers).
+WorkflowState stays a TypedDict by choice (dict transport + Annotated reducers).
 These models validate payloads at node boundaries, then are stored as dicts.
 """
 
